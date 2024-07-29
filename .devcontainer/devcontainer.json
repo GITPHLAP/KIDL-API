@@ -1,0 +1,7 @@
+{
+    "name": "Kidl-Api",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "api",
+    "workspaceFolder": "/app",
+    "extensions": []
+} 
