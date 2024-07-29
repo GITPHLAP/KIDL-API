@@ -3,11 +3,11 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	log "github.com/sirupsen/logrus"
 )
 
 func InitConn() (*Queries, *pgxpool.Pool, error) {

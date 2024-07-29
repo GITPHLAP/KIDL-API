@@ -17,6 +17,6 @@ func StartAPI() {
 }
 
 func (api *Api) initializeRouters(r *gin.Engine) {
-	v1 := r.Group("/v1")
+	// v1 := r.Group("/v1")
 
 }
