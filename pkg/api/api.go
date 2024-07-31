@@ -3,6 +3,7 @@ package api
 import (
 	"kidl-api/pkg/db"
 	"net/http"
+	"os"
 	"reflect"
 	"time"
 
@@ -68,7 +69,13 @@ func StartAPI() {
 }
 
 func (api *Api) healthCheckEndpoint(c *gin.Context) {
-	ReturnResponseData(c, http.StatusOK, "OK", nil)
+	type HealthCheckReturn struct {
+		version string
+	}
+	version := os.Getenv("VERSION")
+	ReturnResponseData(c, http.StatusOK, "OK", HealthCheckReturn{
+		version: version,
+	})
 }
 
 func (api *Api) initializeRouters(r *gin.Engine) {
