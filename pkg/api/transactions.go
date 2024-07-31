@@ -4,6 +4,7 @@ import (
 	"context"
 	"kidl-api/pkg/db"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -33,7 +34,7 @@ type TransactionParamRaw struct {
 }
 
 type TransactionParamConverted struct {
-	Accounting  string        `json:"Bogføringsdato"`
+	Accounting  pgtype.Date   `json:"Bogføringsdato"`
 	Amount      pgtype.Float8 `json:"Beløb"`
 	Sender      pgtype.Int8   `json:"Afsender"`
 	Recipient   pgtype.Int8   `json:"Modtager"`
@@ -67,9 +68,15 @@ func convertTransactionParameters(parameters []TransactionParamRaw) ([]Transacti
 		sender, sendererr := strconv.ParseInt(t.Sender, 10, 64)
 		recipient, recipienterr := strconv.ParseInt(t.Recipient, 10, 64)
 
+		// Try parse accounting
+		accounting, err := time.Parse("2006/01/02", t.Accounting)
+		if err != nil {
+			log.Info(t.Accounting, " is not a valid date!")
+			continue
+		}
 		// Assign all the values to object and append to the result array
 		result = append(result, TransactionParamConverted{
-			Accounting:  t.Accounting,
+			Accounting:  pgtype.Date{Time: accounting, Valid: true},
 			Amount:      pgtype.Float8{Float64: amount, Valid: true},
 			Sender:      pgtype.Int8{Int64: sender, Valid: sendererr == nil},
 			Recipient:   pgtype.Int8{Int64: recipient, Valid: recipienterr == nil},
@@ -82,6 +89,25 @@ func convertTransactionParameters(parameters []TransactionParamRaw) ([]Transacti
 	}
 	return result, nil
 }
+
+func timeSortFuncDesc(a, b TransactionParamConverted) int {
+	if a.Accounting.Time.Equal(b.Accounting.Time) {
+		return 0
+	} else if a.Accounting.Time.Before(b.Accounting.Time) {
+		return 1
+	}
+	return -1
+}
+
+func timeSortFuncAsc(a, b db.InsertNewTransactionsParams) int {
+	if a.Accounting.Time.Equal(b.Accounting.Time) {
+		return 0
+	} else if a.Accounting.Time.Before(b.Accounting.Time) {
+		return -1
+	}
+	return 1
+}
+
 func (api *Api) uploadTransactions(c *gin.Context) {
 	var parametersraw []TransactionParamRaw
 	var parameters []TransactionParamConverted
@@ -111,13 +137,9 @@ func (api *Api) uploadTransactions(c *gin.Context) {
 	}
 	var transactionsToInsert []db.InsertNewTransactionsParams
 
-	for _, t := range parameters {
-		accounting, err := time.Parse("2006/01/02", t.Accounting)
-		if err != nil {
-			log.Info(t.Accounting, " is not a valid date!")
-			continue
-		}
+	slices.SortFunc(parameters, timeSortFuncDesc)
 
+	for _, t := range parameters {
 		// Check for full match if match break because that transactin is allready added
 		if isTransactionsEqual(t, latestTrans) {
 			goto InsertPart
@@ -125,10 +147,10 @@ func (api *Api) uploadTransactions(c *gin.Context) {
 
 		// Add transaction to array of transactions to insert
 		transactionsToInsert = append(transactionsToInsert, db.InsertNewTransactionsParams{
-			Accounting:  pgtype.Date{Time: accounting, Valid: true},
+			Accounting:  t.Accounting,
 			Amount:      t.Amount,
 			Sender:      t.Sender,
-			Recipient:   t.Sender,
+			Recipient:   t.Recipient,
 			Name:        t.Name,
 			Description: t.Description,
 			Balance:     t.Balance,
@@ -139,6 +161,7 @@ func (api *Api) uploadTransactions(c *gin.Context) {
 	}
 
 InsertPart:
+	slices.SortFunc(transactionsToInsert, timeSortFuncAsc)
 	addTransactions, err := dbtx.InsertNewTransactions(ctx, transactionsToInsert)
 	if err != nil {
 		log.Error("Error inserting transactions: ", err)
@@ -150,13 +173,7 @@ InsertPart:
 }
 
 func isTransactionsEqual(paramTrans TransactionParamConverted, latestTrans db.TransactionsTest) bool {
-	accounting, err := time.Parse("2006/01/02", paramTrans.Accounting)
-	if err != nil {
-		return false
-	}
-
-	if accounting == latestTrans.Accounting.Time &&
-		paramTrans.Currency.String == latestTrans.Currency.String &&
+	if paramTrans.Accounting.Time.Format("2006/01/02") == latestTrans.Accounting.Time.Format("2006/01/02") &&
 		paramTrans.Description.String == latestTrans.Description.String &&
 		paramTrans.Name.String == latestTrans.Name.String &&
 		paramTrans.Aligned.String == latestTrans.Aligned.String &&
