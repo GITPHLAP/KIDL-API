@@ -2,10 +2,10 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: dev.Dockerfile
     container_name: kidl-api
     volumes:
-      - ../:/app
+      - ./:/app
     ports:
       - 5003:8080
       - 2345:2345

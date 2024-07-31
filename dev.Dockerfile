@@ -11,7 +11,7 @@ COPY ./ /app/
 RUN apk update && apk add --no-cache git openssh-client
 
 # RUN go mod download
-RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+# RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 
 RUN go install github.com/air-verse/air@latest && go install github.com/go-delve/delve/cmd/dlv@latest
 EXPOSE 2345
