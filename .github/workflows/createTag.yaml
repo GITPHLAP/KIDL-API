@@ -1,0 +1,10 @@
+name: Github tag
+on:
+  push:
+    branches:
+      - master
+jobs:
+  version:
+    uses: GITPHLAP/workflows/.github/workflows/version-tag-creation.yaml@master
+    secrets:
+      USER_TOKEN: ${{ secrets.USER_TOKEN }}     
