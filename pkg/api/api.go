@@ -2,8 +2,11 @@ package api
 
 import (
 	"kidl-api/pkg/db"
+	"net/http"
 	"reflect"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -32,6 +35,14 @@ func StartAPI() {
 
 	r := gin.Default()
 
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:  []string{"*"},
+		AllowMethods:  []string{"POST", "GET", "OPTIONS", "PUT", "DELETE", "PATCH"},
+		AllowHeaders:  []string{"Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization", "Accept", "Origin", "Cache-Control", "X-Requested-With"},
+		ExposeHeaders: []string{"Content-Length"},
+		MaxAge:        12 * time.Hour,
+	}))
+
 	r.Use(TransactionHandler(&api))
 	r.Use(gin.Recovery())
 
@@ -56,9 +67,14 @@ func StartAPI() {
 	}
 }
 
+func (api *Api) healthCheckEndpoint(c *gin.Context) {
+	ReturnResponseData(c, http.StatusOK, "OK", nil)
+}
+
 func (api *Api) initializeRouters(r *gin.Engine) {
 	v1 := r.Group("/v1")
 
+	v1.GET("/health_check", api.healthCheckEndpoint)
 	api.transactionsSubrouter(v1)
 
 }

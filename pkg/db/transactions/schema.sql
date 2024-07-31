@@ -1,4 +1,4 @@
-CREATE TABLE public.transactions (
+CREATE TABLE public.transactions_test (
 	id serial4 NOT NULL,
 	accounting date NULL,
 	amount float8 NULL,

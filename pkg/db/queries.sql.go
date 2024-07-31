@@ -13,14 +13,14 @@ import (
 
 const getLatestTransaction = `-- name: GetLatestTransaction :one
 SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, user_category, reserved, user_accounting 
-FROM transactions
+FROM transactions_test
 ORDER BY id DESC 
 LIMIT 1
 `
 
-func (q *Queries) GetLatestTransaction(ctx context.Context) (Transaction, error) {
+func (q *Queries) GetLatestTransaction(ctx context.Context) (TransactionsTest, error) {
 	row := q.db.QueryRow(ctx, getLatestTransaction)
-	var i Transaction
+	var i TransactionsTest
 	err := row.Scan(
 		&i.ID,
 		&i.Accounting,

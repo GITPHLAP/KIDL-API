@@ -47,5 +47,5 @@ func (r iteratorForInsertNewTransactions) Err() error {
 }
 
 func (q *Queries) InsertNewTransactions(ctx context.Context, arg []InsertNewTransactionsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"public", "transactions"}, []string{"accounting", "amount", "sender", "recipient", "name", "description", "balance", "currency", "aligned", "reserved"}, &iteratorForInsertNewTransactions{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"public", "transactions_test"}, []string{"accounting", "amount", "sender", "recipient", "name", "description", "balance", "currency", "aligned", "reserved"}, &iteratorForInsertNewTransactions{rows: arg})
 }

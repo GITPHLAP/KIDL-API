@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Transaction struct {
+type TransactionsTest struct {
 	ID             int32         `json:"id"`
 	Accounting     pgtype.Date   `json:"accounting"`
 	Amount         pgtype.Float8 `json:"amount"`
