@@ -17,7 +17,6 @@ WORKDIR /app
 RUN echo ${VERSION} > version
 
 COPY --from=builder /api/kidl-api /app
-COPY ./app /app/app/
 
 RUN chmod +x /app/kidl-api
 CMD ["/app/kidl-api"]
