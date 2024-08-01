@@ -8,6 +8,11 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type TransactionCategory struct {
+	ID          int32  `json:"id"`
+	Description string `json:"description"`
+}
+
 type TransactionsTest struct {
 	ID             int32         `json:"id"`
 	Accounting     pgtype.Date   `json:"accounting"`

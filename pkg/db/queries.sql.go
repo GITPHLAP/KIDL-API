@@ -11,6 +11,56 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const anyCategoryByName = `-- name: AnyCategoryByName :one
+SELECT EXISTS (
+    SELECT id
+    FROM transaction_categories
+    WHERE description = $1
+)
+`
+
+func (q *Queries) AnyCategoryByName(ctx context.Context, description string) (bool, error) {
+	row := q.db.QueryRow(ctx, anyCategoryByName, description)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const createCategory = `-- name: CreateCategory :exec
+INSERT INTO transaction_categories(description)
+VALUES($1)
+`
+
+func (q *Queries) CreateCategory(ctx context.Context, description string) error {
+	_, err := q.db.Exec(ctx, createCategory, description)
+	return err
+}
+
+const getAllCategories = `-- name: GetAllCategories :many
+SELECT id, description
+FROM transaction_categories
+`
+
+func (q *Queries) GetAllCategories(ctx context.Context) ([]TransactionCategory, error) {
+	rows, err := q.db.Query(ctx, getAllCategories)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TransactionCategory
+	for rows.Next() {
+		var i TransactionCategory
+		if err := rows.Scan(&i.ID, &i.Description); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLatestTransaction = `-- name: GetLatestTransaction :one
 SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, user_category, reserved, user_accounting 
 FROM transactions_test

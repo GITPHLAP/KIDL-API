@@ -11,7 +11,9 @@ sql:
   schema: 
   - "transactions/schema.sql"
   - "transactions_view/schema.sql"
+  - "transaction_categories/schema.sql"
   queries: 
   - "transactions/queries.sql"
   - "transactions_view/queries.sql"
+  - "transaction_categories/queries.sql"
   

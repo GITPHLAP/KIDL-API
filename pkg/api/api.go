@@ -83,6 +83,7 @@ func (api *Api) initializeRouters(r *gin.Engine) {
 
 	v1.GET("/health_check", api.healthCheckEndpoint)
 	api.transactionsSubrouter(v1)
+	api.transactionCategoriesSubrouter(v1)
 
 }
 
