@@ -24,6 +24,11 @@ type Transaction struct {
 	UserAccounting pgtype.Date   `json:"userAccounting"`
 }
 
+type TransactionCategoriesMapping struct {
+	CategoryID   int32  `json:"categoryId"`
+	MappingValue string `json:"mappingValue"`
+}
+
 type TransactionCategory struct {
 	ID          int32  `json:"id"`
 	Description string `json:"description"`
