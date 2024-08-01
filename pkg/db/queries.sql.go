@@ -39,35 +39,48 @@ func (q *Queries) GetLatestTransaction(ctx context.Context) (TransactionsTest, e
 	return i, err
 }
 
-const getTransactionsByYear = `-- name: GetTransactionsByYear :many
-SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, user_category, reserved, user_accounting 
-FROM transactions_test
+const getTransactionsFromViewByYear = `-- name: GetTransactionsFromViewByYear :many
+SELECT id
+    , accounting
+    , amount
+    , description
+    , category
+    , CASE 
+        WHEN accounting > 0 THEN 'Indtægt' 
+        ELSE 'Udgift'
+    END AS type
+    , balance 
+FROM transactions_view
 WHERE date_part('year', accounting) = $1::int
 `
 
-func (q *Queries) GetTransactionsByYear(ctx context.Context, year int32) ([]TransactionsTest, error) {
-	rows, err := q.db.Query(ctx, getTransactionsByYear, year)
+type GetTransactionsFromViewByYearRow struct {
+	ID          int32         `json:"id"`
+	Accounting  pgtype.Date   `json:"accounting"`
+	Amount      pgtype.Float8 `json:"amount"`
+	Description pgtype.Text   `json:"description"`
+	Category    pgtype.Text   `json:"category"`
+	Type        string        `json:"type"`
+	Balance     pgtype.Float8 `json:"balance"`
+}
+
+func (q *Queries) GetTransactionsFromViewByYear(ctx context.Context, year int32) ([]GetTransactionsFromViewByYearRow, error) {
+	rows, err := q.db.Query(ctx, getTransactionsFromViewByYear, year)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []TransactionsTest
+	var items []GetTransactionsFromViewByYearRow
 	for rows.Next() {
-		var i TransactionsTest
+		var i GetTransactionsFromViewByYearRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Accounting,
 			&i.Amount,
-			&i.Sender,
-			&i.Recipient,
-			&i.Name,
 			&i.Description,
+			&i.Category,
+			&i.Type,
 			&i.Balance,
-			&i.Currency,
-			&i.Aligned,
-			&i.UserCategory,
-			&i.Reserved,
-			&i.UserAccounting,
 		); err != nil {
 			return nil, err
 		}

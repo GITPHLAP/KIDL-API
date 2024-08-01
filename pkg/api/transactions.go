@@ -206,7 +206,7 @@ func (api *Api) getTransactions(c *gin.Context) {
 		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing year")
 	}
 
-	transactions, err := dbtx.GetTransactionsByYear(ctx, int32(year))
+	transactions, err := dbtx.GetTransactionsFromViewByYear(ctx, int32(year))
 	if err != nil {
 		log.Error("Error fetching transactions by year: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")

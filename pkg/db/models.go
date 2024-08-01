@@ -23,3 +23,18 @@ type TransactionsTest struct {
 	Reserved       pgtype.Bool   `json:"reserved"`
 	UserAccounting pgtype.Date   `json:"userAccounting"`
 }
+
+type TransactionsView struct {
+	ID          int32         `json:"id"`
+	Accounting  pgtype.Date   `json:"accounting"`
+	Amount      pgtype.Float8 `json:"amount"`
+	Sender      pgtype.Int8   `json:"sender"`
+	Recipient   pgtype.Int8   `json:"recipient"`
+	Name        pgtype.Text   `json:"name"`
+	Description pgtype.Text   `json:"description"`
+	Balance     pgtype.Float8 `json:"balance"`
+	Currency    pgtype.Text   `json:"currency"`
+	Aligned     pgtype.Text   `json:"aligned"`
+	Category    pgtype.Text   `json:"category"`
+	Reserved    pgtype.Bool   `json:"reserved"`
+}

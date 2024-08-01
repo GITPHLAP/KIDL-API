@@ -10,6 +10,8 @@ sql:
       json_tags_case_style: "camel"
   schema: 
   - "transactions/schema.sql"
+  - "transactions_view/schema.sql"
   queries: 
   - "transactions/queries.sql"
+  - "transactions_view/queries.sql"
   
