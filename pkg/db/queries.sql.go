@@ -63,14 +63,14 @@ func (q *Queries) GetAllCategories(ctx context.Context) ([]TransactionCategory, 
 
 const getLatestTransaction = `-- name: GetLatestTransaction :one
 SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, user_category, reserved, user_accounting 
-FROM transactions_test
+FROM transactions
 ORDER BY accounting DESC, id DESC 
 LIMIT 1
 `
 
-func (q *Queries) GetLatestTransaction(ctx context.Context) (TransactionsTest, error) {
+func (q *Queries) GetLatestTransaction(ctx context.Context) (Transaction, error) {
 	row := q.db.QueryRow(ctx, getLatestTransaction)
-	var i TransactionsTest
+	var i Transaction
 	err := row.Scan(
 		&i.ID,
 		&i.Accounting,
@@ -156,13 +156,13 @@ type InsertNewTransactionsParams struct {
 }
 
 const updateTransactionCategoryAndAccounting = `-- name: UpdateTransactionCategoryAndAccounting :exec
-UPDATE transactions_test
+UPDATE transactions
 SET user_category = $1, user_accounting=$2
 WHERE id = $3
 `
 
 type UpdateTransactionCategoryAndAccountingParams struct {
-	UserCategory   pgtype.Text `json:"userCategory"`
+	UserCategory   pgtype.Int4 `json:"userCategory"`
 	UserAccounting pgtype.Date `json:"userAccounting"`
 	ID             int32       `json:"id"`
 }

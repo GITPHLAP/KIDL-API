@@ -111,7 +111,7 @@ func timeSortFuncAsc(a, b db.InsertNewTransactionsParams) int {
 	return 1
 }
 
-func isTransactionsEqual(paramTrans TransactionParamConverted, latestTrans db.TransactionsTest) bool {
+func isTransactionsEqual(paramTrans TransactionParamConverted, latestTrans db.Transaction) bool {
 	if paramTrans.Accounting.Time.Format("2006/01/02") == latestTrans.Accounting.Time.Format("2006/01/02") &&
 		paramTrans.Description.String == latestTrans.Description.String &&
 		paramTrans.Name.String == latestTrans.Name.String &&
@@ -216,7 +216,7 @@ func (api *Api) getTransactions(c *gin.Context) {
 }
 
 func (api *Api) updateTransaction(c *gin.Context) {
-	var parameters db.TransactionsTest
+	var parameters db.Transaction
 	ctx := context.Background()
 	dbtx := c.MustGet("dbtx").(*db.Queries)
 
