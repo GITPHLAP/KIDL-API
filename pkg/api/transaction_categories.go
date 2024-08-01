@@ -14,6 +14,10 @@ func (api *Api) transactionCategoriesSubrouter(r *gin.RouterGroup) {
 
 	transactionCategoriesAPI.GET("", api.getTransactionCategories)
 	transactionCategoriesAPI.POST("/:category", api.createTransactionCategory)
+
+	transactionCategoriesMappingAPI := transactionCategoriesAPI.Group("/mapping")
+
+	transactionCategoriesMappingAPI.POST("", api.createTransactionCategoryMapping)
 }
 
 func (api *Api) getTransactionCategories(c *gin.Context) {
@@ -50,6 +54,26 @@ func (api *Api) createTransactionCategory(c *gin.Context) {
 	err = dbtx.CreateCategory(ctx, category)
 	if err != nil {
 		log.Error("Error creating category: ", err)
+		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+	}
+
+	ReturnResponseData(c, http.StatusOK, "OK", nil)
+}
+
+func (api *Api) createTransactionCategoryMapping(c *gin.Context) {
+	var parameters db.CreateCategoryMappingParams
+	ctx := context.Background()
+	dbtx := c.MustGet("dbtx").(*db.Queries)
+
+	if err := c.BindJSON(&parameters); err != nil {
+		log.Error("Error parsing request data: ", err)
+		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing request")
+		return
+	}
+
+	err := dbtx.CreateCategoryMapping(ctx, parameters)
+	if err != nil {
+		log.Error("Error creating category mapping: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
 	}
 

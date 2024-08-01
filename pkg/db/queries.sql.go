@@ -36,6 +36,21 @@ func (q *Queries) CreateCategory(ctx context.Context, description string) error 
 	return err
 }
 
+const createCategoryMapping = `-- name: CreateCategoryMapping :exec
+INSERT INTO transaction_categories_mapping(category_id, mapping_value)
+VALUES($1, $2)
+`
+
+type CreateCategoryMappingParams struct {
+	CategoryID   int32  `json:"categoryId"`
+	MappingValue string `json:"mappingValue"`
+}
+
+func (q *Queries) CreateCategoryMapping(ctx context.Context, arg CreateCategoryMappingParams) error {
+	_, err := q.db.Exec(ctx, createCategoryMapping, arg.CategoryID, arg.MappingValue)
+	return err
+}
+
 const getAllCategories = `-- name: GetAllCategories :many
 SELECT id, description
 FROM transaction_categories
