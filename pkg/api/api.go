@@ -70,11 +70,11 @@ func StartAPI() {
 
 func (api *Api) healthCheckEndpoint(c *gin.Context) {
 	type HealthCheckReturn struct {
-		version string
+		Version string `json:"version"`
 	}
 	version := os.Getenv("VERSION")
 	ReturnResponseData(c, http.StatusOK, "OK", HealthCheckReturn{
-		version: version,
+		Version: version, 
 	})
 }
 
