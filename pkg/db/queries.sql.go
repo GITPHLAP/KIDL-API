@@ -14,7 +14,7 @@ import (
 const getLatestTransaction = `-- name: GetLatestTransaction :one
 SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, user_category, reserved, user_accounting 
 FROM transactions_test
-ORDER BY id DESC 
+ORDER BY accounting DESC, id DESC 
 LIMIT 1
 `
 
@@ -39,6 +39,46 @@ func (q *Queries) GetLatestTransaction(ctx context.Context) (TransactionsTest, e
 	return i, err
 }
 
+const getTransactionsByYear = `-- name: GetTransactionsByYear :many
+SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, user_category, reserved, user_accounting 
+FROM transactions_test
+WHERE date_part('year', accounting) = $1::int
+`
+
+func (q *Queries) GetTransactionsByYear(ctx context.Context, year int32) ([]TransactionsTest, error) {
+	rows, err := q.db.Query(ctx, getTransactionsByYear, year)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TransactionsTest
+	for rows.Next() {
+		var i TransactionsTest
+		if err := rows.Scan(
+			&i.ID,
+			&i.Accounting,
+			&i.Amount,
+			&i.Sender,
+			&i.Recipient,
+			&i.Name,
+			&i.Description,
+			&i.Balance,
+			&i.Currency,
+			&i.Aligned,
+			&i.UserCategory,
+			&i.Reserved,
+			&i.UserAccounting,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 type InsertNewTransactionsParams struct {
 	Accounting  pgtype.Date   `json:"accounting"`
 	Amount      pgtype.Float8 `json:"amount"`
@@ -50,4 +90,21 @@ type InsertNewTransactionsParams struct {
 	Currency    pgtype.Text   `json:"currency"`
 	Aligned     pgtype.Text   `json:"aligned"`
 	Reserved    pgtype.Bool   `json:"reserved"`
+}
+
+const updateTransactionCategoryAndAccounting = `-- name: UpdateTransactionCategoryAndAccounting :exec
+UPDATE transactions_test
+SET user_category = $1, user_accounting=$2
+WHERE id = $3
+`
+
+type UpdateTransactionCategoryAndAccountingParams struct {
+	UserCategory   pgtype.Text `json:"userCategory"`
+	UserAccounting pgtype.Date `json:"userAccounting"`
+	ID             int32       `json:"id"`
+}
+
+func (q *Queries) UpdateTransactionCategoryAndAccounting(ctx context.Context, arg UpdateTransactionCategoryAndAccountingParams) error {
+	_, err := q.db.Exec(ctx, updateTransactionCategoryAndAccounting, arg.UserCategory, arg.UserAccounting, arg.ID)
+	return err
 }

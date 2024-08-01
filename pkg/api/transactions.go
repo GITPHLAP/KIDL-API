@@ -18,6 +18,8 @@ func (api *Api) transactionsSubrouter(r *gin.RouterGroup) {
 	transactionAPI := r.Group("/transaction")
 
 	transactionAPI.POST("", api.uploadTransactions)
+	transactionAPI.GET("/:year", api.getTransactions)
+	transactionAPI.PATCH("", api.updateTransaction)
 
 }
 
@@ -45,6 +47,7 @@ type TransactionParamConverted struct {
 	Aligned     pgtype.Text   `json:"Afstemt"`
 }
 
+// region helperFunctions
 func convertTransactionParameters(parameters []TransactionParamRaw) ([]TransactionParamConverted, error) {
 	result := []TransactionParamConverted{}
 
@@ -107,6 +110,24 @@ func timeSortFuncAsc(a, b db.InsertNewTransactionsParams) int {
 	}
 	return 1
 }
+
+func isTransactionsEqual(paramTrans TransactionParamConverted, latestTrans db.TransactionsTest) bool {
+	if paramTrans.Accounting.Time.Format("2006/01/02") == latestTrans.Accounting.Time.Format("2006/01/02") &&
+		paramTrans.Description.String == latestTrans.Description.String &&
+		paramTrans.Name.String == latestTrans.Name.String &&
+		paramTrans.Aligned.String == latestTrans.Aligned.String &&
+		paramTrans.Amount.Float64 == latestTrans.Amount.Float64 &&
+		paramTrans.Balance.Float64 == latestTrans.Balance.Float64 &&
+		paramTrans.Currency.String == latestTrans.Currency.String &&
+		paramTrans.Recipient.Int64 == latestTrans.Recipient.Int64 &&
+		paramTrans.Sender.Int64 == latestTrans.Sender.Int64 {
+
+		return true
+	}
+	return false
+}
+
+// endregion
 
 func (api *Api) uploadTransactions(c *gin.Context) {
 	var parametersraw []TransactionParamRaw
@@ -172,18 +193,48 @@ InsertPart:
 	ReturnResponseData(c, http.StatusOK, "OK", addTransactions)
 }
 
-func isTransactionsEqual(paramTrans TransactionParamConverted, latestTrans db.TransactionsTest) bool {
-	if paramTrans.Accounting.Time.Format("2006/01/02") == latestTrans.Accounting.Time.Format("2006/01/02") &&
-		paramTrans.Description.String == latestTrans.Description.String &&
-		paramTrans.Name.String == latestTrans.Name.String &&
-		paramTrans.Aligned.String == latestTrans.Aligned.String &&
-		paramTrans.Amount.Float64 == latestTrans.Amount.Float64 &&
-		paramTrans.Balance.Float64 == latestTrans.Balance.Float64 &&
-		paramTrans.Currency.String == latestTrans.Currency.String &&
-		paramTrans.Recipient.Int64 == latestTrans.Recipient.Int64 &&
-		paramTrans.Sender.Int64 == latestTrans.Sender.Int64 {
+func (api *Api) getTransactions(c *gin.Context) {
+	ctx := context.Background()
+	dbtx := c.MustGet("dbtx").(*db.Queries)
 
-		return true
+	yearstr := c.Param("year")
+
+	// parse year to int
+	year, err := strconv.Atoi(yearstr)
+	if err != nil {
+		log.Error("Cant convert year to string")
+		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing year")
 	}
-	return false
+
+	transactions, err := dbtx.GetTransactionsByYear(ctx, int32(year))
+	if err != nil {
+		log.Error("Error fetching transactions by year: ", err)
+		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+	}
+
+	ReturnResponseData(c, http.StatusOK, "OK", transactions)
+}
+
+func (api *Api) updateTransaction(c *gin.Context) {
+	var parameters db.TransactionsTest
+	ctx := context.Background()
+	dbtx := c.MustGet("dbtx").(*db.Queries)
+
+	if err := c.BindJSON(&parameters); err != nil {
+		log.Error("Error parsing request data: ", err)
+		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing request")
+		return
+	}
+
+	err := dbtx.UpdateTransactionCategoryAndAccounting(ctx, db.UpdateTransactionCategoryAndAccountingParams{
+		ID:             parameters.ID,
+		UserCategory:   parameters.UserCategory,
+		UserAccounting: parameters.UserAccounting,
+	})
+	if err != nil {
+		log.Error("Error update transaction: ", err)
+		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+	}
+
+	ReturnResponseData(c, http.StatusOK, "OK", nil)
 }

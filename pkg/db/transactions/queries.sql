@@ -5,5 +5,15 @@ VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
 -- name: GetLatestTransaction :one
 SELECT * 
 FROM transactions_test
-ORDER BY id DESC 
+ORDER BY accounting DESC, id DESC 
 LIMIT 1;
+
+-- name: GetTransactionsByYear :many
+SELECT * 
+FROM transactions_test
+WHERE date_part('year', accounting) = @year::int;
+
+-- name: UpdateTransactionCategoryAndAccounting :exec
+UPDATE transactions_test
+SET user_category = $1, user_accounting=$2
+WHERE id = $3;
