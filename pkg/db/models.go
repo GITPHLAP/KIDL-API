@@ -8,12 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type TransactionCategory struct {
-	ID          int32  `json:"id"`
-	Description string `json:"description"`
-}
-
-type TransactionsTest struct {
+type Transaction struct {
 	ID             int32         `json:"id"`
 	Accounting     pgtype.Date   `json:"accounting"`
 	Amount         pgtype.Float8 `json:"amount"`
@@ -24,9 +19,19 @@ type TransactionsTest struct {
 	Balance        pgtype.Float8 `json:"balance"`
 	Currency       pgtype.Text   `json:"currency"`
 	Aligned        pgtype.Text   `json:"aligned"`
-	UserCategory   pgtype.Text   `json:"userCategory"`
+	UserCategory   pgtype.Int4   `json:"userCategory"`
 	Reserved       pgtype.Bool   `json:"reserved"`
 	UserAccounting pgtype.Date   `json:"userAccounting"`
+}
+
+type TransactionCategoriesMapping struct {
+	CategoryID   int32  `json:"categoryId"`
+	MappingValue string `json:"mappingValue"`
+}
+
+type TransactionCategory struct {
+	ID          int32  `json:"id"`
+	Description string `json:"description"`
 }
 
 type TransactionsView struct {
@@ -40,6 +45,7 @@ type TransactionsView struct {
 	Balance     pgtype.Float8 `json:"balance"`
 	Currency    pgtype.Text   `json:"currency"`
 	Aligned     pgtype.Text   `json:"aligned"`
-	Category    pgtype.Text   `json:"category"`
 	Reserved    pgtype.Bool   `json:"reserved"`
+	Category    pgtype.Text   `json:"category"`
+	Type        pgtype.Text   `json:"type"`
 }

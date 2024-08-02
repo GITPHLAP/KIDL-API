@@ -36,6 +36,31 @@ func (q *Queries) CreateCategory(ctx context.Context, description string) error 
 	return err
 }
 
+const createCategoryMapping = `-- name: CreateCategoryMapping :exec
+INSERT INTO transaction_categories_mapping(category_id, mapping_value)
+VALUES($1, $2)
+`
+
+type CreateCategoryMappingParams struct {
+	CategoryID   int32  `json:"categoryId"`
+	MappingValue string `json:"mappingValue"`
+}
+
+func (q *Queries) CreateCategoryMapping(ctx context.Context, arg CreateCategoryMappingParams) error {
+	_, err := q.db.Exec(ctx, createCategoryMapping, arg.CategoryID, arg.MappingValue)
+	return err
+}
+
+const deleteCategoryById = `-- name: DeleteCategoryById :exec
+DELETE FROM transaction_categories
+WHERE id = $1
+`
+
+func (q *Queries) DeleteCategoryById(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteCategoryById, id)
+	return err
+}
+
 const getAllCategories = `-- name: GetAllCategories :many
 SELECT id, description
 FROM transaction_categories
@@ -63,14 +88,14 @@ func (q *Queries) GetAllCategories(ctx context.Context) ([]TransactionCategory, 
 
 const getLatestTransaction = `-- name: GetLatestTransaction :one
 SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, user_category, reserved, user_accounting 
-FROM transactions_test
+FROM transactions
 ORDER BY accounting DESC, id DESC 
 LIMIT 1
 `
 
-func (q *Queries) GetLatestTransaction(ctx context.Context) (TransactionsTest, error) {
+func (q *Queries) GetLatestTransaction(ctx context.Context) (Transaction, error) {
 	row := q.db.QueryRow(ctx, getLatestTransaction)
-	var i TransactionsTest
+	var i Transaction
 	err := row.Scan(
 		&i.ID,
 		&i.Accounting,
@@ -90,47 +115,34 @@ func (q *Queries) GetLatestTransaction(ctx context.Context) (TransactionsTest, e
 }
 
 const getTransactionsFromViewByYear = `-- name: GetTransactionsFromViewByYear :many
-SELECT id
-    , accounting
-    , amount
-    , description
-    , category
-    , CASE 
-        WHEN accounting > 0 THEN 'Indtægt' 
-        ELSE 'Udgift'
-    END AS type
-    , balance 
+SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, reserved, category, type
 FROM transactions_view
 WHERE date_part('year', accounting) = $1::int
 `
 
-type GetTransactionsFromViewByYearRow struct {
-	ID          int32         `json:"id"`
-	Accounting  pgtype.Date   `json:"accounting"`
-	Amount      pgtype.Float8 `json:"amount"`
-	Description pgtype.Text   `json:"description"`
-	Category    pgtype.Text   `json:"category"`
-	Type        string        `json:"type"`
-	Balance     pgtype.Float8 `json:"balance"`
-}
-
-func (q *Queries) GetTransactionsFromViewByYear(ctx context.Context, year int32) ([]GetTransactionsFromViewByYearRow, error) {
+func (q *Queries) GetTransactionsFromViewByYear(ctx context.Context, year int32) ([]TransactionsView, error) {
 	rows, err := q.db.Query(ctx, getTransactionsFromViewByYear, year)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetTransactionsFromViewByYearRow
+	var items []TransactionsView
 	for rows.Next() {
-		var i GetTransactionsFromViewByYearRow
+		var i TransactionsView
 		if err := rows.Scan(
 			&i.ID,
 			&i.Accounting,
 			&i.Amount,
+			&i.Sender,
+			&i.Recipient,
+			&i.Name,
 			&i.Description,
+			&i.Balance,
+			&i.Currency,
+			&i.Aligned,
+			&i.Reserved,
 			&i.Category,
 			&i.Type,
-			&i.Balance,
 		); err != nil {
 			return nil, err
 		}
@@ -155,14 +167,30 @@ type InsertNewTransactionsParams struct {
 	Reserved    pgtype.Bool   `json:"reserved"`
 }
 
+const updateCategory = `-- name: UpdateCategory :exec
+UPDATE transaction_categories
+SET description = $1
+WHERE id =$2
+`
+
+type UpdateCategoryParams struct {
+	Description string `json:"description"`
+	ID          int32  `json:"id"`
+}
+
+func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) error {
+	_, err := q.db.Exec(ctx, updateCategory, arg.Description, arg.ID)
+	return err
+}
+
 const updateTransactionCategoryAndAccounting = `-- name: UpdateTransactionCategoryAndAccounting :exec
-UPDATE transactions_test
+UPDATE transactions
 SET user_category = $1, user_accounting=$2
 WHERE id = $3
 `
 
 type UpdateTransactionCategoryAndAccountingParams struct {
-	UserCategory   pgtype.Text `json:"userCategory"`
+	UserCategory   pgtype.Int4 `json:"userCategory"`
 	UserAccounting pgtype.Date `json:"userAccounting"`
 	ID             int32       `json:"id"`
 }

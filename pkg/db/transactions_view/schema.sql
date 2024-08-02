@@ -9,6 +9,7 @@ CREATE TABLE public.transactions_view (
 	balance float8 NULL,
 	currency varchar(5) NULL,
 	aligned varchar(255) NULL,
+	reserved bool NULL,
 	category varchar(255) NULL,
-	reserved bool NULL
+	type text
 );

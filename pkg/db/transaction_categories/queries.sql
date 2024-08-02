@@ -13,3 +13,12 @@ SELECT EXISTS (
     FROM transaction_categories
     WHERE description = $1
 );
+
+-- name: UpdateCategory :exec
+UPDATE transaction_categories
+SET description = $1
+WHERE id =$2;
+
+-- name: DeleteCategoryById :exec
+DELETE FROM transaction_categories
+WHERE id = $1;
