@@ -61,6 +61,16 @@ func (q *Queries) DeleteCategoryById(ctx context.Context, id int32) error {
 	return err
 }
 
+const deleteCategoryMapping = `-- name: DeleteCategoryMapping :exec
+DELETE FROM transaction_categories_mapping
+WHERE id = $1
+`
+
+func (q *Queries) DeleteCategoryMapping(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteCategoryMapping, id)
+	return err
+}
+
 const getAllCategories = `-- name: GetAllCategories :many
 SELECT id, description
 FROM transaction_categories
@@ -76,6 +86,31 @@ func (q *Queries) GetAllCategories(ctx context.Context) ([]TransactionCategory, 
 	for rows.Next() {
 		var i TransactionCategory
 		if err := rows.Scan(&i.ID, &i.Description); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getCategoryMapping = `-- name: GetCategoryMapping :many
+SELECT id, category_id, mapping_value
+FROM transaction_categories_mapping
+`
+
+func (q *Queries) GetCategoryMapping(ctx context.Context) ([]TransactionCategoriesMapping, error) {
+	rows, err := q.db.Query(ctx, getCategoryMapping)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TransactionCategoriesMapping
+	for rows.Next() {
+		var i TransactionCategoriesMapping
+		if err := rows.Scan(&i.ID, &i.CategoryID, &i.MappingValue); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -180,6 +215,24 @@ type UpdateCategoryParams struct {
 
 func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) error {
 	_, err := q.db.Exec(ctx, updateCategory, arg.Description, arg.ID)
+	return err
+}
+
+const updateCategoryMapping = `-- name: UpdateCategoryMapping :exec
+UPDATE transaction_categories_mapping
+SET category_id = $1
+    , mapping_value = $2
+WHERE id = $3
+`
+
+type UpdateCategoryMappingParams struct {
+	CategoryID   int32  `json:"categoryId"`
+	MappingValue string `json:"mappingValue"`
+	ID           int32  `json:"id"`
+}
+
+func (q *Queries) UpdateCategoryMapping(ctx context.Context, arg UpdateCategoryMappingParams) error {
+	_, err := q.db.Exec(ctx, updateCategoryMapping, arg.CategoryID, arg.MappingValue, arg.ID)
 	return err
 }
 

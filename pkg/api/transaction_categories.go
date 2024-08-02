@@ -21,6 +21,9 @@ func (api *Api) transactionCategoriesSubrouter(r *gin.RouterGroup) {
 	transactionCategoriesMappingAPI := transactionCategoriesAPI.Group("/mapping")
 
 	transactionCategoriesMappingAPI.POST("", api.createTransactionCategoryMapping)
+	transactionCategoriesMappingAPI.PATCH("", api.updateTransactionCategoryMapping)
+	transactionCategoriesMappingAPI.GET("", api.getTransactionCategoryMappings)
+	transactionCategoriesMappingAPI.DELETE(":id", api.deleteTransactionCategoryMapping)
 }
 
 func (api *Api) getTransactionCategories(c *gin.Context) {
@@ -131,6 +134,61 @@ func (api *Api) createTransactionCategoryMapping(c *gin.Context) {
 	err := dbtx.CreateCategoryMapping(ctx, parameters)
 	if err != nil {
 		log.Error("Error creating category mapping: ", err)
+		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+	}
+
+	ReturnResponseData(c, http.StatusOK, "OK", nil)
+}
+
+func (api *Api) updateTransactionCategoryMapping(c *gin.Context) {
+	var parameters db.UpdateCategoryMappingParams
+	ctx := context.Background()
+	dbtx := c.MustGet("dbtx").(*db.Queries)
+
+	if err := c.BindJSON(&parameters); err != nil {
+		log.Error("Error parsing request data: ", err)
+		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing request")
+		return
+	}
+
+	err := dbtx.UpdateCategoryMapping(ctx, parameters)
+	if err != nil {
+		log.Error("Error update category mapping: ", err)
+		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+	}
+
+	ReturnResponseData(c, http.StatusOK, "OK", nil)
+}
+
+func (api *Api) getTransactionCategoryMappings(c *gin.Context) {
+	ctx := context.Background()
+	dbtx := c.MustGet("dbtx").(*db.Queries)
+
+	mappings, err := dbtx.GetCategoryMapping(ctx)
+	if err != nil {
+		log.Error("Error getting category mapping: ", err)
+		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+	}
+
+	ReturnResponseData(c, http.StatusOK, "OK", mappings)
+}
+
+func (api *Api) deleteTransactionCategoryMapping(c *gin.Context) {
+	ctx := context.Background()
+	dbtx := c.MustGet("dbtx").(*db.Queries)
+
+	idStr := c.Param("id")
+
+	// parse year to int
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		log.Error("Cant convert id to string")
+		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing id")
+	}
+
+	err = dbtx.DeleteCategoryMapping(ctx, int32(id))
+	if err != nil {
+		log.Error("Error deleting category mapping: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
 	}
 

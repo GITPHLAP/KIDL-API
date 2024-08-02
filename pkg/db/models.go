@@ -25,6 +25,7 @@ type Transaction struct {
 }
 
 type TransactionCategoriesMapping struct {
+	ID           int32  `json:"id"`
 	CategoryID   int32  `json:"categoryId"`
 	MappingValue string `json:"mappingValue"`
 }
