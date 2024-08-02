@@ -51,6 +51,16 @@ func (q *Queries) CreateCategoryMapping(ctx context.Context, arg CreateCategoryM
 	return err
 }
 
+const deleteCategoryById = `-- name: DeleteCategoryById :exec
+DELETE FROM transaction_categories
+WHERE id = $1
+`
+
+func (q *Queries) DeleteCategoryById(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteCategoryById, id)
+	return err
+}
+
 const getAllCategories = `-- name: GetAllCategories :many
 SELECT id, description
 FROM transaction_categories
@@ -155,6 +165,22 @@ type InsertNewTransactionsParams struct {
 	Currency    pgtype.Text   `json:"currency"`
 	Aligned     pgtype.Text   `json:"aligned"`
 	Reserved    pgtype.Bool   `json:"reserved"`
+}
+
+const updateCategory = `-- name: UpdateCategory :exec
+UPDATE transaction_categories
+SET description = $1
+WHERE id =$2
+`
+
+type UpdateCategoryParams struct {
+	Description string `json:"description"`
+	ID          int32  `json:"id"`
+}
+
+func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) error {
+	_, err := q.db.Exec(ctx, updateCategory, arg.Description, arg.ID)
+	return err
 }
 
 const updateTransactionCategoryAndAccounting = `-- name: UpdateTransactionCategoryAndAccounting :exec
