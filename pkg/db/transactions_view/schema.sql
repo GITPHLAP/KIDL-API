@@ -10,6 +10,6 @@ CREATE TABLE public.transactions_view (
 	currency varchar(5) NULL,
 	aligned varchar(255) NULL,
 	reserved bool NULL,
-	category varchar(255) NULL,
+	category_id int NULL,
 	type text
 );

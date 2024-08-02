@@ -150,7 +150,7 @@ func (q *Queries) GetLatestTransaction(ctx context.Context) (Transaction, error)
 }
 
 const getTransactionsFromViewByYear = `-- name: GetTransactionsFromViewByYear :many
-SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, reserved, category, type
+SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, reserved, category_id, type
 FROM transactions_view
 WHERE date_part('year', accounting) = $1::int
 `
@@ -176,7 +176,7 @@ func (q *Queries) GetTransactionsFromViewByYear(ctx context.Context, year int32)
 			&i.Currency,
 			&i.Aligned,
 			&i.Reserved,
-			&i.Category,
+			&i.CategoryID,
 			&i.Type,
 		); err != nil {
 			return nil, err

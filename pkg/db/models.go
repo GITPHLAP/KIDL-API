@@ -47,6 +47,6 @@ type TransactionsView struct {
 	Currency    pgtype.Text   `json:"currency"`
 	Aligned     pgtype.Text   `json:"aligned"`
 	Reserved    pgtype.Bool   `json:"reserved"`
-	Category    pgtype.Text   `json:"category"`
+	CategoryID  pgtype.Int4   `json:"categoryId"`
 	Type        pgtype.Text   `json:"type"`
 }
