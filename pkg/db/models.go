@@ -26,6 +26,15 @@ type Forecast struct {
 	DecemberAmount  pgtype.Float8 `json:"decemberAmount"`
 }
 
+type MonthlyOverviewByCategory struct {
+	Year        int32         `json:"year"`
+	Month       int32         `json:"month"`
+	Type        pgtype.Text   `json:"type"`
+	CategoryID  int32         `json:"categoryId"`
+	ActualSum   pgtype.Float8 `json:"actualSum"`
+	ForecastSum pgtype.Float8 `json:"forecastSum"`
+}
+
 type Transaction struct {
 	ID             int32         `json:"id"`
 	Accounting     pgtype.Date   `json:"accounting"`
