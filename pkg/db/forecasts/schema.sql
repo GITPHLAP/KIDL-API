@@ -14,5 +14,6 @@ CREATE TABLE forecasts (
 	october_amount FLOAT8,
 	november_amount FLOAT8,
 	december_amount FLOAT8,
-	CONSTRAINT fk_forecasts_category_id FOREIGN KEY (category_id) REFERENCES transaction_categories(id)
+	CONSTRAINT fk_forecasts_category_id FOREIGN KEY (category_id) REFERENCES transaction_categories(id) ON DELETE CASCADE,
+	CONSTRAINT unique_forecasts_year_category UNIQUE (YEAR, category_id)
 );

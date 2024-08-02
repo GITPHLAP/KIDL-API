@@ -36,6 +36,7 @@ func StartAPI() {
 
 	r := gin.Default()
 
+	// Cors options
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:  []string{"*"},
 		AllowMethods:  []string{"POST", "GET", "OPTIONS", "PUT", "DELETE", "PATCH"},
@@ -47,6 +48,7 @@ func StartAPI() {
 	r.Use(TransactionHandler(&api))
 	r.Use(gin.Recovery())
 
+	// Validations of pgtypes
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		log.Println("Registering new types")
 		v.RegisterCustomTypeFunc(ValidatePgtypeText, pgtype.Text{})
@@ -62,8 +64,6 @@ func StartAPI() {
 	api.initializeRouters(r)
 	err = r.Run(":8080")
 	if err != nil {
-		//Fatal error since it does not make sense to continue running application the main router does not work.
-		//This should never fail.
 		log.Fatalf("Error starting API, err: %s", err.Error())
 	}
 }
@@ -74,7 +74,7 @@ func (api *Api) healthCheckEndpoint(c *gin.Context) {
 	}
 	version := os.Getenv("VERSION")
 	ReturnResponseData(c, http.StatusOK, "OK", HealthCheckReturn{
-		Version: version, 
+		Version: version,
 	})
 }
 
@@ -84,6 +84,7 @@ func (api *Api) initializeRouters(r *gin.Engine) {
 	v1.GET("/health_check", api.healthCheckEndpoint)
 	api.transactionsSubrouter(v1)
 	api.transactionCategoriesSubrouter(v1)
+	api.forecastsSubrouter(v1)
 
 }
 

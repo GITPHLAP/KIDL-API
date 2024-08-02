@@ -8,6 +8,24 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Forecast struct {
+	ID              int64         `json:"id"`
+	Year            int32         `json:"year"`
+	CategoryID      int32         `json:"categoryId"`
+	JanuaryAmount   pgtype.Float8 `json:"januaryAmount"`
+	FebruaryAmount  pgtype.Float8 `json:"februaryAmount"`
+	MarchAmount     pgtype.Float8 `json:"marchAmount"`
+	AprilAmount     pgtype.Float8 `json:"aprilAmount"`
+	MayAmount       pgtype.Float8 `json:"mayAmount"`
+	JuneAmount      pgtype.Float8 `json:"juneAmount"`
+	JulyAmount      pgtype.Float8 `json:"julyAmount"`
+	AugustAmount    pgtype.Float8 `json:"augustAmount"`
+	SeptemberAmount pgtype.Float8 `json:"septemberAmount"`
+	OctoberAmount   pgtype.Float8 `json:"octoberAmount"`
+	NovemberAmount  pgtype.Float8 `json:"novemberAmount"`
+	DecemberAmount  pgtype.Float8 `json:"decemberAmount"`
+}
+
 type Transaction struct {
 	ID             int32         `json:"id"`
 	Accounting     pgtype.Date   `json:"accounting"`

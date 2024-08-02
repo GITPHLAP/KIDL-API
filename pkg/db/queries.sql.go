@@ -121,6 +121,48 @@ func (q *Queries) GetCategoryMapping(ctx context.Context) ([]TransactionCategori
 	return items, nil
 }
 
+const getForecastsByYear = `-- name: GetForecastsByYear :many
+SELECT id, year, category_id, january_amount, february_amount, march_amount, april_amount, may_amount, june_amount, july_amount, august_amount, september_amount, october_amount, november_amount, december_amount
+FROM forecasts
+WHERE year = $1
+`
+
+func (q *Queries) GetForecastsByYear(ctx context.Context, year int32) ([]Forecast, error) {
+	rows, err := q.db.Query(ctx, getForecastsByYear, year)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Forecast
+	for rows.Next() {
+		var i Forecast
+		if err := rows.Scan(
+			&i.ID,
+			&i.Year,
+			&i.CategoryID,
+			&i.JanuaryAmount,
+			&i.FebruaryAmount,
+			&i.MarchAmount,
+			&i.AprilAmount,
+			&i.MayAmount,
+			&i.JuneAmount,
+			&i.JulyAmount,
+			&i.AugustAmount,
+			&i.SeptemberAmount,
+			&i.OctoberAmount,
+			&i.NovemberAmount,
+			&i.DecemberAmount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLatestTransaction = `-- name: GetLatestTransaction :one
 SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, user_category, reserved, user_accounting 
 FROM transactions
@@ -189,6 +231,50 @@ func (q *Queries) GetTransactionsFromViewByYear(ctx context.Context, year int32)
 	return items, nil
 }
 
+const insertForecast = `-- name: InsertForecast :exec
+INSERT INTO public.forecasts ("year", category_id, january_amount, february_amount
+    , march_amount, april_amount, may_amount, june_amount, july_amount, august_amount
+    , september_amount, october_amount, november_amount, december_amount) 
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+`
+
+type InsertForecastParams struct {
+	Year            int32         `json:"year"`
+	CategoryID      int32         `json:"categoryId"`
+	JanuaryAmount   pgtype.Float8 `json:"januaryAmount"`
+	FebruaryAmount  pgtype.Float8 `json:"februaryAmount"`
+	MarchAmount     pgtype.Float8 `json:"marchAmount"`
+	AprilAmount     pgtype.Float8 `json:"aprilAmount"`
+	MayAmount       pgtype.Float8 `json:"mayAmount"`
+	JuneAmount      pgtype.Float8 `json:"juneAmount"`
+	JulyAmount      pgtype.Float8 `json:"julyAmount"`
+	AugustAmount    pgtype.Float8 `json:"augustAmount"`
+	SeptemberAmount pgtype.Float8 `json:"septemberAmount"`
+	OctoberAmount   pgtype.Float8 `json:"octoberAmount"`
+	NovemberAmount  pgtype.Float8 `json:"novemberAmount"`
+	DecemberAmount  pgtype.Float8 `json:"decemberAmount"`
+}
+
+func (q *Queries) InsertForecast(ctx context.Context, arg InsertForecastParams) error {
+	_, err := q.db.Exec(ctx, insertForecast,
+		arg.Year,
+		arg.CategoryID,
+		arg.JanuaryAmount,
+		arg.FebruaryAmount,
+		arg.MarchAmount,
+		arg.AprilAmount,
+		arg.MayAmount,
+		arg.JuneAmount,
+		arg.JulyAmount,
+		arg.AugustAmount,
+		arg.SeptemberAmount,
+		arg.OctoberAmount,
+		arg.NovemberAmount,
+		arg.DecemberAmount,
+	)
+	return err
+}
+
 type InsertNewTransactionsParams struct {
 	Accounting  pgtype.Date   `json:"accounting"`
 	Amount      pgtype.Float8 `json:"amount"`
@@ -233,6 +319,64 @@ type UpdateCategoryMappingParams struct {
 
 func (q *Queries) UpdateCategoryMapping(ctx context.Context, arg UpdateCategoryMappingParams) error {
 	_, err := q.db.Exec(ctx, updateCategoryMapping, arg.CategoryID, arg.MappingValue, arg.ID)
+	return err
+}
+
+const updateForecastById = `-- name: UpdateForecastById :exec
+UPDATE forecasts
+SET "year"=$1
+    , category_id=$2
+    , january_amount=$3
+    , february_amount=$4
+    , march_amount=$5
+    , april_amount=$6
+    , may_amount=$7
+    , june_amount=$8
+    , july_amount=$9
+    , august_amount=$10
+    , september_amount=$11
+    , october_amount=$12
+    , november_amount=$13
+    , december_amount=$14
+WHERE id=$15
+`
+
+type UpdateForecastByIdParams struct {
+	Year            int32         `json:"year"`
+	CategoryID      int32         `json:"categoryId"`
+	JanuaryAmount   pgtype.Float8 `json:"januaryAmount"`
+	FebruaryAmount  pgtype.Float8 `json:"februaryAmount"`
+	MarchAmount     pgtype.Float8 `json:"marchAmount"`
+	AprilAmount     pgtype.Float8 `json:"aprilAmount"`
+	MayAmount       pgtype.Float8 `json:"mayAmount"`
+	JuneAmount      pgtype.Float8 `json:"juneAmount"`
+	JulyAmount      pgtype.Float8 `json:"julyAmount"`
+	AugustAmount    pgtype.Float8 `json:"augustAmount"`
+	SeptemberAmount pgtype.Float8 `json:"septemberAmount"`
+	OctoberAmount   pgtype.Float8 `json:"octoberAmount"`
+	NovemberAmount  pgtype.Float8 `json:"novemberAmount"`
+	DecemberAmount  pgtype.Float8 `json:"decemberAmount"`
+	ID              int64         `json:"id"`
+}
+
+func (q *Queries) UpdateForecastById(ctx context.Context, arg UpdateForecastByIdParams) error {
+	_, err := q.db.Exec(ctx, updateForecastById,
+		arg.Year,
+		arg.CategoryID,
+		arg.JanuaryAmount,
+		arg.FebruaryAmount,
+		arg.MarchAmount,
+		arg.AprilAmount,
+		arg.MayAmount,
+		arg.JuneAmount,
+		arg.JulyAmount,
+		arg.AugustAmount,
+		arg.SeptemberAmount,
+		arg.OctoberAmount,
+		arg.NovemberAmount,
+		arg.DecemberAmount,
+		arg.ID,
+	)
 	return err
 }
 
