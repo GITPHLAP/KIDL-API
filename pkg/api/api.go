@@ -85,6 +85,7 @@ func (api *Api) initializeRouters(r *gin.Engine) {
 	api.transactionsSubrouter(v1)
 	api.transactionCategoriesSubrouter(v1)
 	api.forecastsSubrouter(v1)
+	api.overviewSubrouter(v1)
 
 }
 

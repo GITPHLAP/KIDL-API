@@ -191,88 +191,44 @@ func (q *Queries) GetLatestTransaction(ctx context.Context) (Transaction, error)
 	return i, err
 }
 
-const getOverviewByYearNType = `-- name: GetOverviewByYearNType :many
-SELECT year, month, type, category_id, actual_sum, forecast_sum
-FROM monthly_overview_by_category
-WHERE year = $1 AND type = $2
+const getOverviewByYearNMonth = `-- name: GetOverviewByYearNMonth :one
+SELECT jsonb_agg(y) 
+FROM (
+	SELECT "year", json_agg(ym.mcaf) AS months
+	FROM (
+			SELECT "year", json_build_object( "month", json_agg(ymt.caf)) AS mcaf
+			FROM (
+				SELECT mobc."year", mobc."month", json_build_object(mobc."type", json_agg(
+					json_build_object(
+						'category_id', category_id, 'actual_sum', actual_sum, 'forecast_sum', forecast_sum
+					)
+				), mobc."type" || '_total', 					json_build_object(
+						'total_actual', SUM(actual_sum) , 'total_forecast', SUM(forecast_sum)
+					)
+				) AS caf
+				FROM monthly_overview_by_category mobc
+                WHERE year = $1 AND month = ANY($2::int[])
+				GROUP BY mobc.YEAR
+					, mobc.MONTH
+					, mobc.TYPE
+			) ymt
+			GROUP BY YEAR
+				, MONTH
+		) ym
+	GROUP BY YEAR
+) y
 `
 
-type GetOverviewByYearNTypeParams struct {
-	Year int32       `json:"year"`
-	Type pgtype.Text `json:"type"`
+type GetOverviewByYearNMonthParams struct {
+	Year   int32   `json:"year"`
+	Months []int32 `json:"months"`
 }
 
-func (q *Queries) GetOverviewByYearNType(ctx context.Context, arg GetOverviewByYearNTypeParams) ([]MonthlyOverviewByCategory, error) {
-	rows, err := q.db.Query(ctx, getOverviewByYearNType, arg.Year, arg.Type)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []MonthlyOverviewByCategory
-	for rows.Next() {
-		var i MonthlyOverviewByCategory
-		if err := rows.Scan(
-			&i.Year,
-			&i.Month,
-			&i.Type,
-			&i.CategoryID,
-			&i.ActualSum,
-			&i.ForecastSum,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getTotalOverviewBy = `-- name: GetTotalOverviewBy :many
-SELECT year, month, type, SUM(actual_sum), SUM(forecast_sum)
-FROM monthly_overview_by_category
-WHERE year = $1 AND type = $2
-GROUP BY year, month, type
-`
-
-type GetTotalOverviewByParams struct {
-	Year int32       `json:"year"`
-	Type pgtype.Text `json:"type"`
-}
-
-type GetTotalOverviewByRow struct {
-	Year  int32       `json:"year"`
-	Month int32       `json:"month"`
-	Type  pgtype.Text `json:"type"`
-	Sum   int64       `json:"sum"`
-	Sum_2 int64       `json:"sum2"`
-}
-
-func (q *Queries) GetTotalOverviewBy(ctx context.Context, arg GetTotalOverviewByParams) ([]GetTotalOverviewByRow, error) {
-	rows, err := q.db.Query(ctx, getTotalOverviewBy, arg.Year, arg.Type)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetTotalOverviewByRow
-	for rows.Next() {
-		var i GetTotalOverviewByRow
-		if err := rows.Scan(
-			&i.Year,
-			&i.Month,
-			&i.Type,
-			&i.Sum,
-			&i.Sum_2,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GetOverviewByYearNMonth(ctx context.Context, arg GetOverviewByYearNMonthParams) ([]byte, error) {
+	row := q.db.QueryRow(ctx, getOverviewByYearNMonth, arg.Year, arg.Months)
+	var jsonb_agg []byte
+	err := row.Scan(&jsonb_agg)
+	return jsonb_agg, err
 }
 
 const getTransactionsFromViewByYear = `-- name: GetTransactionsFromViewByYear :many
