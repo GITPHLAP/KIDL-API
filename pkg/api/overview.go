@@ -17,7 +17,6 @@ import (
 func (api *Api) overviewSubrouter(r *gin.RouterGroup) {
 	forecastAPI := r.Group("/overview")
 
-	// forecastAPI.GET("/:year", api.test)
 	forecastAPI.GET("/:year", api.getOverviews)
 
 }
@@ -31,7 +30,7 @@ type MonthWrapper map[string][]MonthData
 
 type TypeData struct {
 	ActualSum   pgtype.Float8 `json:"actual_sum"`
-	CategoryID  pgtype.Int4   `json:"category_id"`
+	Category    pgtype.Text   `json:"category"`
 	ForecastSum pgtype.Float8 `json:"forecast_sum"`
 }
 type TypeTotalData struct {

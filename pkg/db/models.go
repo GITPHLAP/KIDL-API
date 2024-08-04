@@ -30,7 +30,7 @@ type MonthlyOverviewByCategory struct {
 	Year        int32         `json:"year"`
 	Month       int32         `json:"month"`
 	Type        pgtype.Text   `json:"type"`
-	CategoryID  int32         `json:"categoryId"`
+	Category    string        `json:"category"`
 	ActualSum   pgtype.Float8 `json:"actualSum"`
 	ForecastSum pgtype.Float8 `json:"forecastSum"`
 }

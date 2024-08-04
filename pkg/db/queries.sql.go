@@ -200,7 +200,7 @@ FROM (
 			FROM (
 				SELECT mobc."year", mobc."month", json_build_object(mobc."type", json_agg(
 					json_build_object(
-						'category_id', category_id, 'actual_sum', actual_sum, 'forecast_sum', forecast_sum
+						'category', category, 'actual_sum', actual_sum, 'forecast_sum', forecast_sum
 					)
 				), mobc."type" || '_total', 					json_build_object(
 						'total_actual', SUM(actual_sum) , 'total_forecast', SUM(forecast_sum)
