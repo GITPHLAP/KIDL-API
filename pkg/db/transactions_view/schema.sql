@@ -11,5 +11,5 @@ CREATE TABLE public.transactions_view (
 	aligned varchar(255) NULL,
 	reserved bool NULL,
 	category_id int NULL,
-	type text
+	type public.trans_type
 );

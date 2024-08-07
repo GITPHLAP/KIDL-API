@@ -75,7 +75,7 @@ type Forecast struct {
 type MonthlyOverviewByCategory struct {
 	Year        int32         `json:"year"`
 	Month       int32         `json:"month"`
-	Type        pgtype.Text   `json:"type"`
+	Type        NullTransType `json:"type"`
 	Category    string        `json:"category"`
 	ActualSum   pgtype.Float8 `json:"actualSum"`
 	ForecastSum pgtype.Float8 `json:"forecastSum"`
@@ -121,5 +121,5 @@ type TransactionsView struct {
 	Aligned     pgtype.Text   `json:"aligned"`
 	Reserved    pgtype.Bool   `json:"reserved"`
 	CategoryID  pgtype.Int4   `json:"categoryId"`
-	Type        pgtype.Text   `json:"type"`
+	Type        NullTransType `json:"type"`
 }
