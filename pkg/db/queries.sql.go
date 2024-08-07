@@ -122,7 +122,7 @@ func (q *Queries) GetCategoryMapping(ctx context.Context) ([]TransactionCategori
 }
 
 const getForecastsByYear = `-- name: GetForecastsByYear :many
-SELECT id, year, category_id, january_amount, february_amount, march_amount, april_amount, may_amount, june_amount, july_amount, august_amount, september_amount, october_amount, november_amount, december_amount
+SELECT id, year, type, category_id, january_amount, february_amount, march_amount, april_amount, may_amount, june_amount, july_amount, august_amount, september_amount, october_amount, november_amount, december_amount
 FROM forecasts
 WHERE year = $1
 `
@@ -139,6 +139,7 @@ func (q *Queries) GetForecastsByYear(ctx context.Context, year int32) ([]Forecas
 		if err := rows.Scan(
 			&i.ID,
 			&i.Year,
+			&i.Type,
 			&i.CategoryID,
 			&i.JanuaryAmount,
 			&i.FebruaryAmount,
@@ -274,13 +275,13 @@ func (q *Queries) GetTransactionsFromViewByYear(ctx context.Context, year int32)
 const insertForecast = `-- name: InsertForecast :exec
 INSERT INTO public.forecasts ("year", category_id, january_amount, february_amount
     , march_amount, april_amount, may_amount, june_amount, july_amount, august_amount
-    , september_amount, october_amount, november_amount, december_amount) 
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+    , september_amount, october_amount, november_amount, december_amount, "type") 
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 `
 
 type InsertForecastParams struct {
 	Year            int32         `json:"year"`
-	CategoryID      int32         `json:"categoryId"`
+	CategoryID      pgtype.Int4   `json:"categoryId"`
 	JanuaryAmount   pgtype.Float8 `json:"januaryAmount"`
 	FebruaryAmount  pgtype.Float8 `json:"februaryAmount"`
 	MarchAmount     pgtype.Float8 `json:"marchAmount"`
@@ -293,6 +294,7 @@ type InsertForecastParams struct {
 	OctoberAmount   pgtype.Float8 `json:"octoberAmount"`
 	NovemberAmount  pgtype.Float8 `json:"novemberAmount"`
 	DecemberAmount  pgtype.Float8 `json:"decemberAmount"`
+	Type            TransType     `json:"type"`
 }
 
 func (q *Queries) InsertForecast(ctx context.Context, arg InsertForecastParams) error {
@@ -311,6 +313,7 @@ func (q *Queries) InsertForecast(ctx context.Context, arg InsertForecastParams) 
 		arg.OctoberAmount,
 		arg.NovemberAmount,
 		arg.DecemberAmount,
+		arg.Type,
 	)
 	return err
 }
@@ -378,12 +381,13 @@ SET "year"=$1
     , october_amount=$12
     , november_amount=$13
     , december_amount=$14
-WHERE id=$15
+    , "type"=$15
+WHERE id=$16
 `
 
 type UpdateForecastByIdParams struct {
 	Year            int32         `json:"year"`
-	CategoryID      int32         `json:"categoryId"`
+	CategoryID      pgtype.Int4   `json:"categoryId"`
 	JanuaryAmount   pgtype.Float8 `json:"januaryAmount"`
 	FebruaryAmount  pgtype.Float8 `json:"februaryAmount"`
 	MarchAmount     pgtype.Float8 `json:"marchAmount"`
@@ -396,6 +400,7 @@ type UpdateForecastByIdParams struct {
 	OctoberAmount   pgtype.Float8 `json:"octoberAmount"`
 	NovemberAmount  pgtype.Float8 `json:"novemberAmount"`
 	DecemberAmount  pgtype.Float8 `json:"decemberAmount"`
+	Type            TransType     `json:"type"`
 	ID              int64         `json:"id"`
 }
 
@@ -415,6 +420,7 @@ func (q *Queries) UpdateForecastById(ctx context.Context, arg UpdateForecastById
 		arg.OctoberAmount,
 		arg.NovemberAmount,
 		arg.DecemberAmount,
+		arg.Type,
 		arg.ID,
 	)
 	return err

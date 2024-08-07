@@ -1,8 +1,8 @@
 -- name: InsertForecast :exec 
 INSERT INTO public.forecasts ("year", category_id, january_amount, february_amount
     , march_amount, april_amount, may_amount, june_amount, july_amount, august_amount
-    , september_amount, october_amount, november_amount, december_amount) 
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
+    , september_amount, october_amount, november_amount, december_amount, "type") 
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15);
 
 -- name: GetForecastsByYear :many
 SELECT *
@@ -25,4 +25,5 @@ SET "year"=$1
     , october_amount=$12
     , november_amount=$13
     , december_amount=$14
-WHERE id=$15;
+    , "type"=$15
+WHERE id=$16;

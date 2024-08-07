@@ -5,13 +5,59 @@
 package db
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type TransType string
+
+const (
+	TransTypeExpenses TransType = "expenses"
+	TransTypeIncome   TransType = "income"
+)
+
+func (e *TransType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TransType(s)
+	case string:
+		*e = TransType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TransType: %T", src)
+	}
+	return nil
+}
+
+type NullTransType struct {
+	TransType TransType `json:"transType"`
+	Valid     bool      `json:"valid"` // Valid is true if TransType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTransType) Scan(value interface{}) error {
+	if value == nil {
+		ns.TransType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TransType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTransType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TransType), nil
+}
 
 type Forecast struct {
 	ID              int64         `json:"id"`
 	Year            int32         `json:"year"`
-	CategoryID      int32         `json:"categoryId"`
+	Type            TransType     `json:"type"`
+	CategoryID      pgtype.Int4   `json:"categoryId"`
 	JanuaryAmount   pgtype.Float8 `json:"januaryAmount"`
 	FebruaryAmount  pgtype.Float8 `json:"februaryAmount"`
 	MarchAmount     pgtype.Float8 `json:"marchAmount"`
