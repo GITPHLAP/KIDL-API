@@ -121,5 +121,5 @@ type TransactionsView struct {
 	Aligned     pgtype.Text   `json:"aligned"`
 	Reserved    pgtype.Bool   `json:"reserved"`
 	CategoryID  pgtype.Int4   `json:"categoryId"`
-	Type        NullTransType `json:"type"`
+	Type        TransType     `json:"type"`
 }
