@@ -95,6 +95,7 @@ type Transaction struct {
 	UserCategory   pgtype.Int4   `json:"userCategory"`
 	Reserved       pgtype.Bool   `json:"reserved"`
 	UserAccounting pgtype.Date   `json:"userAccounting"`
+	UserCategoryID pgtype.Int4   `json:"userCategoryId"`
 }
 
 type TransactionCategoriesMapping struct {

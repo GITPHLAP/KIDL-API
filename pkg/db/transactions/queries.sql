@@ -10,5 +10,5 @@ LIMIT 1;
 
 -- name: UpdateTransactionCategoryAndAccounting :exec
 UPDATE transactions
-SET user_category = $1, user_accounting=$2
+SET user_category_id = $1, user_accounting=$2
 WHERE id = $3;

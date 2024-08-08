@@ -112,16 +112,7 @@ func timeSortFuncAsc(a, b db.InsertNewTransactionsParams) int {
 }
 
 func isTransactionsEqual(paramTrans TransactionParamConverted, latestTrans db.Transaction) bool {
-	if paramTrans.Accounting.Time.Format("2006/01/02") == latestTrans.Accounting.Time.Format("2006/01/02") &&
-		paramTrans.Description.String == latestTrans.Description.String &&
-		paramTrans.Name.String == latestTrans.Name.String &&
-		paramTrans.Aligned.String == latestTrans.Aligned.String &&
-		paramTrans.Amount.Float64 == latestTrans.Amount.Float64 &&
-		paramTrans.Balance.Float64 == latestTrans.Balance.Float64 &&
-		paramTrans.Currency.String == latestTrans.Currency.String &&
-		paramTrans.Recipient.Int64 == latestTrans.Recipient.Int64 &&
-		paramTrans.Sender.Int64 == latestTrans.Sender.Int64 {
-
+	if paramTrans.Accounting.Time.Format("2006/01/02") == latestTrans.Accounting.Time.Format("2006/01/02") {
 		return true
 	}
 	return false
@@ -216,7 +207,7 @@ func (api *Api) getTransactions(c *gin.Context) {
 }
 
 func (api *Api) updateTransaction(c *gin.Context) {
-	var parameters db.Transaction
+	var parameters db.TransactionsView
 	ctx := context.Background()
 	dbtx := c.MustGet("dbtx").(*db.Queries)
 
@@ -228,8 +219,8 @@ func (api *Api) updateTransaction(c *gin.Context) {
 
 	err := dbtx.UpdateTransactionCategoryAndAccounting(ctx, db.UpdateTransactionCategoryAndAccountingParams{
 		ID:             parameters.ID,
-		UserCategory:   parameters.UserCategory,
-		UserAccounting: parameters.UserAccounting,
+		UserCategoryID: parameters.CategoryID,
+		UserAccounting: parameters.Accounting,
 	})
 	if err != nil {
 		log.Error("Error update transaction: ", err)

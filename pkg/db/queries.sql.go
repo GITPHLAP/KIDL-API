@@ -165,7 +165,7 @@ func (q *Queries) GetForecastsByYear(ctx context.Context, year int32) ([]Forecas
 }
 
 const getLatestTransaction = `-- name: GetLatestTransaction :one
-SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, user_category, reserved, user_accounting 
+SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, user_category, reserved, user_accounting, user_category_id 
 FROM transactions
 ORDER BY accounting DESC, id DESC 
 LIMIT 1
@@ -188,6 +188,7 @@ func (q *Queries) GetLatestTransaction(ctx context.Context) (Transaction, error)
 		&i.UserCategory,
 		&i.Reserved,
 		&i.UserAccounting,
+		&i.UserCategoryID,
 	)
 	return i, err
 }
@@ -428,17 +429,17 @@ func (q *Queries) UpdateForecastById(ctx context.Context, arg UpdateForecastById
 
 const updateTransactionCategoryAndAccounting = `-- name: UpdateTransactionCategoryAndAccounting :exec
 UPDATE transactions
-SET user_category = $1, user_accounting=$2
+SET user_category_id = $1, user_accounting=$2
 WHERE id = $3
 `
 
 type UpdateTransactionCategoryAndAccountingParams struct {
-	UserCategory   pgtype.Int4 `json:"userCategory"`
+	UserCategoryID pgtype.Int4 `json:"userCategoryId"`
 	UserAccounting pgtype.Date `json:"userAccounting"`
 	ID             int32       `json:"id"`
 }
 
 func (q *Queries) UpdateTransactionCategoryAndAccounting(ctx context.Context, arg UpdateTransactionCategoryAndAccountingParams) error {
-	_, err := q.db.Exec(ctx, updateTransactionCategoryAndAccounting, arg.UserCategory, arg.UserAccounting, arg.ID)
+	_, err := q.db.Exec(ctx, updateTransactionCategoryAndAccounting, arg.UserCategoryID, arg.UserAccounting, arg.ID)
 	return err
 }

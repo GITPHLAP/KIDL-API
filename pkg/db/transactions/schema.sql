@@ -12,5 +12,6 @@ CREATE TABLE public.transactions (
 	user_category int NULL,
 	reserved bool NULL,
 	user_accounting date NULL,
+	user_category_id int NULL,
 	CONSTRAINT transactions_amount_sender_recipient_name_description_balan_key UNIQUE (amount, sender, recipient, name, description, balance, currency)
 );
