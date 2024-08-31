@@ -7,10 +7,10 @@ FROM (
 			FROM (
 				SELECT mobc."year", mobc."month", json_build_object(mobc."type", json_agg(
 					json_build_object(
-						'category', category, 'actual_sum', actual_sum, 'forecast_sum', forecast_sum
+						'category', category, 'actual_sum', actual_sum, 'plan_sum', plan_sum
 					)
 				), mobc."type" || '_total', 					json_build_object(
-						'total_actual', SUM(actual_sum) , 'total_forecast', SUM(forecast_sum)
+						'total_actual', SUM(actual_sum) , 'total_plan', SUM(plan_sum)
 					)
 				) AS caf
 				FROM monthly_overview_by_category mobc
@@ -27,7 +27,7 @@ FROM (
 
 -- name: Get13thMonthByYear :one 
 WITH year_overview AS (
-	SELECT YEAR, TYPE, category, SUM(actual_sum) AS actual_sum , sum(forecast_sum) AS forecast_sum 
+	SELECT YEAR, TYPE, category, SUM(actual_sum) AS actual_sum , sum(plan_sum) AS plan_sum 
 	FROM monthly_overview_by_category mobc 
 	WHERE YEAR = $1
 	GROUP BY YEAR, TYPE, category
@@ -36,10 +36,10 @@ SELECT "year", json_agg(ym.caf) AS calculation
 FROM (
 	SELECT yo."year", json_build_object(yo."type", json_agg(
 		json_build_object(
-			'category', category, 'actual_sum', actual_sum, 'forecast_sum', forecast_sum
+			'category', category, 'actual_sum', actual_sum, 'plan_sum', plan_sum
 		)
 	), yo."type" || '_total', 					json_build_object(
-			'total_actual', SUM(actual_sum) , 'total_forecast', SUM(forecast_sum)
+			'total_actual', SUM(actual_sum) , 'total_plan', SUM(plan_sum)
 		)
 	) AS caf
 	FROM year_overview yo

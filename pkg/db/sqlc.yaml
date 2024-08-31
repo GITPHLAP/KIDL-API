@@ -14,13 +14,13 @@ sql:
   - "transactions_view/schema.sql"
   - "transaction_categories/schema.sql"
   - "transaction_categories_mapping/schema.sql"
-  - "forecasts/schema.sql"
+  - "plans/schema.sql"
   - "monthly_overview_by_category/schema.sql"
   queries: 
   - "transactions/queries.sql"
   - "transactions_view/queries.sql"
   - "transaction_categories/queries.sql"
   - "transaction_categories_mapping/queries.sql"
-  - "forecasts/queries.sql"
+  - "plans/queries.sql"
   - "monthly_overview_by_category/queries.sql"
   

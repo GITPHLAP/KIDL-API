@@ -10,16 +10,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (api *Api) forecastsSubrouter(r *gin.RouterGroup) {
-	forecastAPI := r.Group("/forecast")
+func (api *Api) plansSubrouter(r *gin.RouterGroup) {
+	planAPI := r.Group("/plan")
 
-	forecastAPI.GET("/:year", api.getForecasts)
-	forecastAPI.POST("", api.createForecast)
-	forecastAPI.PATCH("", api.updateForecast)
+	planAPI.GET("/:year", api.getPlans)
+	planAPI.POST("", api.createPlan)
+	planAPI.PATCH("", api.updatePlan)
 
 }
 
-func (api *Api) getForecasts(c *gin.Context) {
+func (api *Api) getPlans(c *gin.Context) {
 	ctx := context.Background()
 	dbtx := c.MustGet("dbtx").(*db.Queries)
 
@@ -32,17 +32,17 @@ func (api *Api) getForecasts(c *gin.Context) {
 		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing year")
 	}
 
-	forecasts, err := dbtx.GetForecastsByYear(ctx, int32(year))
+	plans, err := dbtx.GetPlansByYear(ctx, int32(year))
 	if err != nil {
-		log.Error("Error fetching forecasts by year: ", err)
+		log.Error("Error fetching plans by year: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
 	}
 
-	ReturnResponseData(c, http.StatusOK, "OK", forecasts)
+	ReturnResponseData(c, http.StatusOK, "OK", plans)
 }
 
-func (api *Api) createForecast(c *gin.Context) {
-	var parameters db.InsertForecastParams
+func (api *Api) createPlan(c *gin.Context) {
+	var parameters db.InsertPlanParams
 
 	ctx := context.Background()
 	dbtx := c.MustGet("dbtx").(*db.Queries)
@@ -53,9 +53,9 @@ func (api *Api) createForecast(c *gin.Context) {
 		return
 	}
 
-	err := dbtx.InsertForecast(ctx, parameters)
+	err := dbtx.InsertPlan(ctx, parameters)
 	if err != nil {
-		log.Error("Error inserting forecast: ", err)
+		log.Error("Error inserting plan: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
 		return
 	}
@@ -63,8 +63,8 @@ func (api *Api) createForecast(c *gin.Context) {
 	ReturnResponseData(c, http.StatusOK, "OK", nil)
 }
 
-func (api *Api) updateForecast(c *gin.Context) {
-	var parameters db.UpdateForecastByIdParams
+func (api *Api) updatePlan(c *gin.Context) {
+	var parameters db.UpdatePlanByIdParams
 	ctx := context.Background()
 	dbtx := c.MustGet("dbtx").(*db.Queries)
 
@@ -74,9 +74,9 @@ func (api *Api) updateForecast(c *gin.Context) {
 		return
 	}
 
-	err := dbtx.UpdateForecastById(ctx, parameters)
+	err := dbtx.UpdatePlanById(ctx, parameters)
 	if err != nil {
-		log.Error("Error update forecast: ", err)
+		log.Error("Error update plan: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
 	}
 

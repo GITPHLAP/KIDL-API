@@ -4,5 +4,5 @@ CREATE TABLE monthly_overview_by_category (
 	type public.trans_type,
 	category text NOT NULL,
 	actual_sum FLOAT8,
-	forecast_sum FLOAT8
+	plan_sum FLOAT8
 );

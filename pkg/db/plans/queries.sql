@@ -1,16 +1,16 @@
--- name: InsertForecast :exec 
-INSERT INTO public.forecasts ("year", category_id, january_amount, february_amount
+-- name: InsertPlan :exec 
+INSERT INTO public.plans ("year", category_id, january_amount, february_amount
     , march_amount, april_amount, may_amount, june_amount, july_amount, august_amount
     , september_amount, october_amount, november_amount, december_amount, "type") 
 VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15);
 
--- name: GetForecastsByYear :many
+-- name: GetPlansByYear :many
 SELECT *
-FROM forecasts
+FROM plans
 WHERE year = $1;
 
--- name: UpdateForecastById :exec
-UPDATE forecasts
+-- name: UpdatePlanById :exec
+UPDATE plans
 SET "year"=$1
     , category_id=$2
     , january_amount=$3

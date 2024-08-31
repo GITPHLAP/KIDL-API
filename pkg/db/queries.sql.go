@@ -73,7 +73,7 @@ func (q *Queries) DeleteCategoryMapping(ctx context.Context, id int32) error {
 
 const get13thMonthByYear = `-- name: Get13thMonthByYear :one
 WITH year_overview AS (
-	SELECT YEAR, TYPE, category, SUM(actual_sum) AS actual_sum , sum(forecast_sum) AS forecast_sum 
+	SELECT YEAR, TYPE, category, SUM(actual_sum) AS actual_sum , sum(plan_sum) AS plan_sum 
 	FROM monthly_overview_by_category mobc 
 	WHERE YEAR = $1
 	GROUP BY YEAR, TYPE, category
@@ -82,10 +82,10 @@ SELECT "year", json_agg(ym.caf) AS calculation
 FROM (
 	SELECT yo."year", json_build_object(yo."type", json_agg(
 		json_build_object(
-			'category', category, 'actual_sum', actual_sum, 'forecast_sum', forecast_sum
+			'category', category, 'actual_sum', actual_sum, 'plan_sum', plan_sum
 		)
 	), yo."type" || '_total', 					json_build_object(
-			'total_actual', SUM(actual_sum) , 'total_forecast', SUM(forecast_sum)
+			'total_actual', SUM(actual_sum) , 'total_plan', SUM(plan_sum)
 		)
 	) AS caf
 	FROM year_overview yo
@@ -158,49 +158,6 @@ func (q *Queries) GetCategoryMapping(ctx context.Context) ([]TransactionCategori
 	return items, nil
 }
 
-const getForecastsByYear = `-- name: GetForecastsByYear :many
-SELECT id, year, type, category_id, january_amount, february_amount, march_amount, april_amount, may_amount, june_amount, july_amount, august_amount, september_amount, october_amount, november_amount, december_amount
-FROM forecasts
-WHERE year = $1
-`
-
-func (q *Queries) GetForecastsByYear(ctx context.Context, year int32) ([]Forecast, error) {
-	rows, err := q.db.Query(ctx, getForecastsByYear, year)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Forecast
-	for rows.Next() {
-		var i Forecast
-		if err := rows.Scan(
-			&i.ID,
-			&i.Year,
-			&i.Type,
-			&i.CategoryID,
-			&i.JanuaryAmount,
-			&i.FebruaryAmount,
-			&i.MarchAmount,
-			&i.AprilAmount,
-			&i.MayAmount,
-			&i.JuneAmount,
-			&i.JulyAmount,
-			&i.AugustAmount,
-			&i.SeptemberAmount,
-			&i.OctoberAmount,
-			&i.NovemberAmount,
-			&i.DecemberAmount,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getLatestTransaction = `-- name: GetLatestTransaction :one
 SELECT id, accounting, amount, sender, recipient, name, description, balance, currency, aligned, user_category, reserved, user_accounting, user_category_id 
 FROM transactions
@@ -239,10 +196,10 @@ FROM (
 			FROM (
 				SELECT mobc."year", mobc."month", json_build_object(mobc."type", json_agg(
 					json_build_object(
-						'category', category, 'actual_sum', actual_sum, 'forecast_sum', forecast_sum
+						'category', category, 'actual_sum', actual_sum, 'plan_sum', plan_sum
 					)
 				), mobc."type" || '_total', 					json_build_object(
-						'total_actual', SUM(actual_sum) , 'total_forecast', SUM(forecast_sum)
+						'total_actual', SUM(actual_sum) , 'total_plan', SUM(plan_sum)
 					)
 				) AS caf
 				FROM monthly_overview_by_category mobc
@@ -268,6 +225,49 @@ func (q *Queries) GetOverviewByYearNMonth(ctx context.Context, arg GetOverviewBy
 	var jsonb_agg []byte
 	err := row.Scan(&jsonb_agg)
 	return jsonb_agg, err
+}
+
+const getPlansByYear = `-- name: GetPlansByYear :many
+SELECT id, year, type, category_id, january_amount, february_amount, march_amount, april_amount, may_amount, june_amount, july_amount, august_amount, september_amount, october_amount, november_amount, december_amount
+FROM plans
+WHERE year = $1
+`
+
+func (q *Queries) GetPlansByYear(ctx context.Context, year int32) ([]Plan, error) {
+	rows, err := q.db.Query(ctx, getPlansByYear, year)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Plan
+	for rows.Next() {
+		var i Plan
+		if err := rows.Scan(
+			&i.ID,
+			&i.Year,
+			&i.Type,
+			&i.CategoryID,
+			&i.JanuaryAmount,
+			&i.FebruaryAmount,
+			&i.MarchAmount,
+			&i.AprilAmount,
+			&i.MayAmount,
+			&i.JuneAmount,
+			&i.JulyAmount,
+			&i.AugustAmount,
+			&i.SeptemberAmount,
+			&i.OctoberAmount,
+			&i.NovemberAmount,
+			&i.DecemberAmount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getTransactionsFromViewByYear = `-- name: GetTransactionsFromViewByYear :many
@@ -310,14 +310,27 @@ func (q *Queries) GetTransactionsFromViewByYear(ctx context.Context, year int32)
 	return items, nil
 }
 
-const insertForecast = `-- name: InsertForecast :exec
-INSERT INTO public.forecasts ("year", category_id, january_amount, february_amount
+type InsertNewTransactionsParams struct {
+	Accounting  pgtype.Date   `json:"accounting"`
+	Amount      pgtype.Float8 `json:"amount"`
+	Sender      pgtype.Int8   `json:"sender"`
+	Recipient   pgtype.Int8   `json:"recipient"`
+	Name        pgtype.Text   `json:"name"`
+	Description pgtype.Text   `json:"description"`
+	Balance     pgtype.Float8 `json:"balance"`
+	Currency    pgtype.Text   `json:"currency"`
+	Aligned     pgtype.Text   `json:"aligned"`
+	Reserved    pgtype.Bool   `json:"reserved"`
+}
+
+const insertPlan = `-- name: InsertPlan :exec
+INSERT INTO public.plans ("year", category_id, january_amount, february_amount
     , march_amount, april_amount, may_amount, june_amount, july_amount, august_amount
     , september_amount, october_amount, november_amount, december_amount, "type") 
 VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 `
 
-type InsertForecastParams struct {
+type InsertPlanParams struct {
 	Year            int32         `json:"year"`
 	CategoryID      pgtype.Int4   `json:"categoryId"`
 	JanuaryAmount   pgtype.Float8 `json:"januaryAmount"`
@@ -335,8 +348,8 @@ type InsertForecastParams struct {
 	Type            TransType     `json:"type"`
 }
 
-func (q *Queries) InsertForecast(ctx context.Context, arg InsertForecastParams) error {
-	_, err := q.db.Exec(ctx, insertForecast,
+func (q *Queries) InsertPlan(ctx context.Context, arg InsertPlanParams) error {
+	_, err := q.db.Exec(ctx, insertPlan,
 		arg.Year,
 		arg.CategoryID,
 		arg.JanuaryAmount,
@@ -354,19 +367,6 @@ func (q *Queries) InsertForecast(ctx context.Context, arg InsertForecastParams) 
 		arg.Type,
 	)
 	return err
-}
-
-type InsertNewTransactionsParams struct {
-	Accounting  pgtype.Date   `json:"accounting"`
-	Amount      pgtype.Float8 `json:"amount"`
-	Sender      pgtype.Int8   `json:"sender"`
-	Recipient   pgtype.Int8   `json:"recipient"`
-	Name        pgtype.Text   `json:"name"`
-	Description pgtype.Text   `json:"description"`
-	Balance     pgtype.Float8 `json:"balance"`
-	Currency    pgtype.Text   `json:"currency"`
-	Aligned     pgtype.Text   `json:"aligned"`
-	Reserved    pgtype.Bool   `json:"reserved"`
 }
 
 const isBalanceMatchSumOfAmount = `-- name: IsBalanceMatchSumOfAmount :one
@@ -415,8 +415,8 @@ func (q *Queries) UpdateCategoryMapping(ctx context.Context, arg UpdateCategoryM
 	return err
 }
 
-const updateForecastById = `-- name: UpdateForecastById :exec
-UPDATE forecasts
+const updatePlanById = `-- name: UpdatePlanById :exec
+UPDATE plans
 SET "year"=$1
     , category_id=$2
     , january_amount=$3
@@ -435,7 +435,7 @@ SET "year"=$1
 WHERE id=$16
 `
 
-type UpdateForecastByIdParams struct {
+type UpdatePlanByIdParams struct {
 	Year            int32         `json:"year"`
 	CategoryID      pgtype.Int4   `json:"categoryId"`
 	JanuaryAmount   pgtype.Float8 `json:"januaryAmount"`
@@ -454,8 +454,8 @@ type UpdateForecastByIdParams struct {
 	ID              int64         `json:"id"`
 }
 
-func (q *Queries) UpdateForecastById(ctx context.Context, arg UpdateForecastByIdParams) error {
-	_, err := q.db.Exec(ctx, updateForecastById,
+func (q *Queries) UpdatePlanById(ctx context.Context, arg UpdatePlanByIdParams) error {
+	_, err := q.db.Exec(ctx, updatePlanById,
 		arg.Year,
 		arg.CategoryID,
 		arg.JanuaryAmount,

@@ -53,7 +53,16 @@ func (ns NullTransType) Value() (driver.Value, error) {
 	return string(ns.TransType), nil
 }
 
-type Forecast struct {
+type MonthlyOverviewByCategory struct {
+	Year      int32         `json:"year"`
+	Month     int32         `json:"month"`
+	Type      NullTransType `json:"type"`
+	Category  string        `json:"category"`
+	ActualSum pgtype.Float8 `json:"actualSum"`
+	PlanSum   pgtype.Float8 `json:"planSum"`
+}
+
+type Plan struct {
 	ID              int64         `json:"id"`
 	Year            int32         `json:"year"`
 	Type            TransType     `json:"type"`
@@ -70,15 +79,6 @@ type Forecast struct {
 	OctoberAmount   pgtype.Float8 `json:"octoberAmount"`
 	NovemberAmount  pgtype.Float8 `json:"novemberAmount"`
 	DecemberAmount  pgtype.Float8 `json:"decemberAmount"`
-}
-
-type MonthlyOverviewByCategory struct {
-	Year        int32         `json:"year"`
-	Month       int32         `json:"month"`
-	Type        NullTransType `json:"type"`
-	Category    string        `json:"category"`
-	ActualSum   pgtype.Float8 `json:"actualSum"`
-	ForecastSum pgtype.Float8 `json:"forecastSum"`
 }
 
 type Transaction struct {

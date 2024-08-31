@@ -1,4 +1,4 @@
-CREATE TABLE forecasts (
+CREATE TABLE plans (
 	id bigserial NOT NULL,
 	"year" int4 NOT NULL,
 	"type" trans_type NOT NULL,
@@ -15,6 +15,6 @@ CREATE TABLE forecasts (
 	october_amount float8 NULL,
 	november_amount float8 NULL,
 	december_amount float8 NULL,
-	CONSTRAINT forecasts_pkey PRIMARY KEY (id),
-	CONSTRAINT unique_forecasts_year_category UNIQUE (YEAR, type, category_id)
+	CONSTRAINT plans_pkey PRIMARY KEY (id),
+	CONSTRAINT unique_plans_year_category UNIQUE (YEAR, type, category_id)
 );
