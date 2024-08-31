@@ -93,24 +93,6 @@ func convertTransactionParameters(parameters []TransactionParamRaw) ([]Transacti
 	return result, nil
 }
 
-func timeSortFuncDesc(a, b TransactionParamConverted) int {
-	if a.Accounting.Time.Equal(b.Accounting.Time) {
-		return 0
-	} else if a.Accounting.Time.Before(b.Accounting.Time) {
-		return 1
-	}
-	return -1
-}
-
-func timeSortFuncAsc(a, b db.InsertNewTransactionsParams) int {
-	if a.Accounting.Time.Equal(b.Accounting.Time) {
-		return 0
-	} else if a.Accounting.Time.Before(b.Accounting.Time) {
-		return -1
-	}
-	return 1
-}
-
 func isTransactionsEqual(paramTrans TransactionParamConverted, latestTrans db.Transaction) bool {
 	if paramTrans.Accounting.Time.Format("2006/01/02") == latestTrans.Accounting.Time.Format("2006/01/02") {
 		return true
@@ -120,6 +102,7 @@ func isTransactionsEqual(paramTrans TransactionParamConverted, latestTrans db.Tr
 
 // endregion
 
+// The order of the transactions should be desc for accounting else it will not work
 func (api *Api) uploadTransactions(c *gin.Context) {
 	var parametersraw []TransactionParamRaw
 	var parameters []TransactionParamConverted
@@ -149,8 +132,6 @@ func (api *Api) uploadTransactions(c *gin.Context) {
 	}
 	var transactionsToInsert []db.InsertNewTransactionsParams
 
-	slices.SortFunc(parameters, timeSortFuncDesc)
-
 	for _, t := range parameters {
 		// Check for full match if match break because that transactin is allready added
 		if isTransactionsEqual(t, latestTrans) {
@@ -173,7 +154,8 @@ func (api *Api) uploadTransactions(c *gin.Context) {
 	}
 
 InsertPart:
-	slices.SortFunc(transactionsToInsert, timeSortFuncAsc)
+	// Reverse to insert it in the correct order so the latest transactions also is the latest transaction in db
+	slices.Reverse(transactionsToInsert)
 	addTransactions, err := dbtx.InsertNewTransactions(ctx, transactionsToInsert)
 	if err != nil {
 		log.Error("Error inserting transactions: ", err)
