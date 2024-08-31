@@ -71,6 +71,43 @@ func (q *Queries) DeleteCategoryMapping(ctx context.Context, id int32) error {
 	return err
 }
 
+const get13thMonthByYear = `-- name: Get13thMonthByYear :one
+WITH year_overview AS (
+	SELECT YEAR, TYPE, category, SUM(actual_sum) AS actual_sum , sum(forecast_sum) AS forecast_sum 
+	FROM monthly_overview_by_category mobc 
+	WHERE YEAR = $1
+	GROUP BY YEAR, TYPE, category
+)
+SELECT "year", json_agg(ym.caf) AS calculation
+FROM (
+	SELECT yo."year", json_build_object(yo."type", json_agg(
+		json_build_object(
+			'category', category, 'actual_sum', actual_sum, 'forecast_sum', forecast_sum
+		)
+	), yo."type" || '_total', 					json_build_object(
+			'total_actual', SUM(actual_sum) , 'total_forecast', SUM(forecast_sum)
+		)
+	) AS caf
+	FROM year_overview yo
+	WHERE year = $1 
+	GROUP BY yo.YEAR
+		, yo.TYPE
+) ym
+GROUP BY YEAR
+`
+
+type Get13thMonthByYearRow struct {
+	Year        int32  `json:"year"`
+	Calculation []byte `json:"calculation"`
+}
+
+func (q *Queries) Get13thMonthByYear(ctx context.Context, year int32) (Get13thMonthByYearRow, error) {
+	row := q.db.QueryRow(ctx, get13thMonthByYear, year)
+	var i Get13thMonthByYearRow
+	err := row.Scan(&i.Year, &i.Calculation)
+	return i, err
+}
+
 const getAllCategories = `-- name: GetAllCategories :many
 SELECT id, description
 FROM transaction_categories

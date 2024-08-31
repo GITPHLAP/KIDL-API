@@ -47,6 +47,8 @@ type MonthData struct {
 
 func (api *Api) getOverviews(c *gin.Context) {
 	var result OverviewReturn
+	var totalMonthData []MonthData
+
 	ctx := context.Background()
 	dbtx := c.MustGet("dbtx").(*db.Queries)
 
@@ -93,14 +95,34 @@ func (api *Api) getOverviews(c *gin.Context) {
 		return
 	}
 
-	log.Infof("%+v\n", string(overviewDataByte))
-
 	err = json.Unmarshal(overviewDataByte, &result)
 	if err != nil {
 		log.Error("Cant unmarshal overview data: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
 		return
 	}
+
+	// Fetch the "13th month" Total for the year
+	totalOverviewDataByte, err := dbtx.Get13thMonthByYear(ctx, int32(year))
+	if err != nil {
+		log.Error("Cant get total overview by year: ", err)
+		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
+	}
+
+	// Unmarshal the data to MonthData struct
+	err = json.Unmarshal(totalOverviewDataByte.Calculation, &totalMonthData)
+	if err != nil {
+		log.Error("Cant unmarshal overview data: ", err)
+		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
+	}
+	// Create a MonthWrapper to append to result slice of MonthWrapper
+	totalMonthWrapper := MonthWrapper{}
+	totalMonthWrapper["13"] = totalMonthData
+
+	// Append the "13" to rest of the overview
+	result[0].Months = append(result[0].Months, totalMonthWrapper)
 
 	ReturnResponseData(c, http.StatusOK, "OK", result)
 }
