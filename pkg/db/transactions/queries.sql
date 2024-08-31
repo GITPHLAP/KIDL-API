@@ -12,3 +12,8 @@ LIMIT 1;
 UPDATE transactions
 SET user_category_id = $1, user_accounting=$2
 WHERE id = $3;
+
+-- name: IsBalanceMatchSumOfAmount :one
+SELECT SUM(amount) = (SELECT balance FROM transactions ORDER BY id DESC LIMIT 1) latest_balance
+FROM transactions;
+

@@ -332,6 +332,18 @@ type InsertNewTransactionsParams struct {
 	Reserved    pgtype.Bool   `json:"reserved"`
 }
 
+const isBalanceMatchSumOfAmount = `-- name: IsBalanceMatchSumOfAmount :one
+SELECT SUM(amount) = (SELECT balance FROM transactions ORDER BY id DESC LIMIT 1) latest_balance
+FROM transactions
+`
+
+func (q *Queries) IsBalanceMatchSumOfAmount(ctx context.Context) (bool, error) {
+	row := q.db.QueryRow(ctx, isBalanceMatchSumOfAmount)
+	var latest_balance bool
+	err := row.Scan(&latest_balance)
+	return latest_balance, err
+}
+
 const updateCategory = `-- name: UpdateCategory :exec
 UPDATE transaction_categories
 SET description = $1

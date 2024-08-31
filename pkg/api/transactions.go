@@ -20,6 +20,7 @@ func (api *Api) transactionsSubrouter(r *gin.RouterGroup) {
 	transactionAPI.POST("", api.uploadTransactions)
 	transactionAPI.GET("/:year", api.getTransactions)
 	transactionAPI.PATCH("", api.updateTransaction)
+	transactionAPI.GET("/is_balance_corrext", api.getTransactions)
 
 }
 
@@ -210,4 +211,17 @@ func (api *Api) updateTransaction(c *gin.Context) {
 	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", nil)
+}
+
+func (api *Api) IsBalanceCorrect(c *gin.Context) {
+	ctx := context.Background()
+	dbtx := c.MustGet("dbtx").(*db.Queries)
+
+	match, err := dbtx.IsBalanceMatchSumOfAmount(ctx)
+	if err != nil {
+		log.Error("Error checking balance: ", err)
+		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+	}
+
+	ReturnResponseData(c, http.StatusOK, "OK", match)
 }
