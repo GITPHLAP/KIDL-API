@@ -20,7 +20,7 @@ func (api *Api) transactionsSubrouter(r *gin.RouterGroup) {
 	transactionAPI.POST("", api.uploadTransactions)
 	transactionAPI.GET("/:year", api.getTransactions)
 	transactionAPI.PATCH("", api.updateTransaction)
-	transactionAPI.GET("/is_balance_corrext", api.getTransactions)
+	transactionAPI.GET("/is_balance_correct", api.IsBalanceCorrect)
 
 }
 
