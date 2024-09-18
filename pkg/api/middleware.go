@@ -2,11 +2,13 @@ package api
 
 import (
 	"errors"
+	"kidl-api/pkg/db"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -55,7 +57,19 @@ func APIStatistics(api *Api) gin.HandlerFunc {
 		ip := c.RemoteIP()
 		elapsedTime := time.Since(t)
 
-		// TODO: Insert to db
+		stats := db.InsertApiStatisticParams{
+			Url:                url,
+			StatusCode:         int32(status),
+			HttpMethod:         method,
+			SizeBytes:          int64(size),
+			ClientIp:           ip,
+			ElapsedTimeSeconds: pgtype.Float8{Float64: elapsedTime.Seconds(), Valid: true},
+		}
+
+		err := api.db.InsertApiStatistic(c, stats)
+		if err != nil {
+			log.Warning("Error inserting API statistics: ", err.Error())
+		}
 
 	}
 }

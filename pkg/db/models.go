@@ -53,6 +53,16 @@ func (ns NullTransType) Value() (driver.Value, error) {
 	return string(ns.TransType), nil
 }
 
+type ApiStatistic struct {
+	Timestamp          pgtype.Timestamp `json:"timestamp"`
+	Url                string           `json:"url"`
+	StatusCode         int32            `json:"statusCode"`
+	HttpMethod         string           `json:"httpMethod"`
+	SizeBytes          int64            `json:"sizeBytes"`
+	ClientIp           string           `json:"clientIp"`
+	ElapsedTimeSeconds pgtype.Float8    `json:"elapsedTimeSeconds"`
+}
+
 type MonthlyOverviewByCategory struct {
 	Year      int32         `json:"year"`
 	Month     int32         `json:"month"`

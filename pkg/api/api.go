@@ -46,6 +46,7 @@ func StartAPI() {
 	}))
 
 	r.Use(TransactionHandler(&api))
+	r.Use(APIStatistics(&api))
 	r.Use(gin.Recovery())
 
 	// Validations of pgtypes
