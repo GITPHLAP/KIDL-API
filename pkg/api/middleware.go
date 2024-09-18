@@ -54,7 +54,7 @@ func APIStatistics(api *Api) gin.HandlerFunc {
 		status := c.Writer.Status()
 		method := c.Request.Method
 		size := c.Writer.Size()
-		ip := c.RemoteIP()
+		ip := c.ClientIP()
 		elapsedTime := time.Since(t)
 
 		stats := db.InsertApiStatisticParams{
