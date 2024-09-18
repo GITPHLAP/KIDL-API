@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -33,5 +34,28 @@ func TransactionHandler(api *Api) gin.HandlerFunc {
 		} else {
 			log.Warn("Rolled back transaction in middleware", c.Request.URL.String(), " ", c.Request.Method)
 		}
+	}
+}
+
+func APIStatistics(api *Api) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Time the request starts
+		t := time.Now()
+
+		//Before request is processed
+
+		c.Next()
+
+		//After request is processed
+
+		url := c.Request.URL.Path
+		status := c.Writer.Status()
+		method := c.Request.Method
+		size := c.Writer.Size()
+		ip := c.RemoteIP()
+		elapsedTime := time.Since(t)
+
+		// TODO: Insert to db
+
 	}
 }
