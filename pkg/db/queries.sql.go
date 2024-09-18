@@ -310,6 +310,32 @@ func (q *Queries) GetTransactionsFromViewByYear(ctx context.Context, year int32)
 	return items, nil
 }
 
+const insertApiStatistic = `-- name: InsertApiStatistic :exec
+INSERT INTO public.api_statistics (url, status_code, http_method, size_bytes, client_ip, elapsed_time_seconds) 
+VALUES($1, $2, $3, $4, $5, $6)
+`
+
+type InsertApiStatisticParams struct {
+	Url                string        `json:"url"`
+	StatusCode         int32         `json:"statusCode"`
+	HttpMethod         string        `json:"httpMethod"`
+	SizeBytes          int64         `json:"sizeBytes"`
+	ClientIp           string        `json:"clientIp"`
+	ElapsedTimeSeconds pgtype.Float8 `json:"elapsedTimeSeconds"`
+}
+
+func (q *Queries) InsertApiStatistic(ctx context.Context, arg InsertApiStatisticParams) error {
+	_, err := q.db.Exec(ctx, insertApiStatistic,
+		arg.Url,
+		arg.StatusCode,
+		arg.HttpMethod,
+		arg.SizeBytes,
+		arg.ClientIp,
+		arg.ElapsedTimeSeconds,
+	)
+	return err
+}
+
 type InsertNewTransactionsParams struct {
 	Accounting  pgtype.Date   `json:"accounting"`
 	Amount      pgtype.Float8 `json:"amount"`
