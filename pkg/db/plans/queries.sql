@@ -27,3 +27,14 @@ SET "year"=$1
     , december_amount=$14
     , "type"=$15
 WHERE id=$16;
+
+-- name: InsertCopiedPlans :copyfrom
+INSERT INTO public.plans ("year", category_id, january_amount, february_amount
+    , march_amount, april_amount, may_amount, june_amount, july_amount, august_amount
+    , september_amount, october_amount, november_amount, december_amount, "type") 
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15);
+
+-- name: GetPlanYearsOrderedAsc :many
+SELECT DISTINCT "year"
+FROM plans 
+ORDER BY "year"; 

@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"kidl-api/pkg/db"
 	"net/http"
 	"strconv"
@@ -16,6 +17,8 @@ func (api *Api) plansSubrouter(r *gin.RouterGroup) {
 	planAPI.GET("/:year", api.getPlans)
 	planAPI.POST("", api.createPlan)
 	planAPI.PATCH("", api.updatePlan)
+	planAPI.POST("/copy_plan/:fromYear/:toYear", api.copyPlan)
+	planAPI.GET("", api.getPlanYears)
 
 }
 
@@ -81,4 +84,77 @@ func (api *Api) updatePlan(c *gin.Context) {
 	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", nil)
+}
+
+func (api *Api) copyPlan(c *gin.Context) {
+	ctx := context.Background()
+	dbtx := c.MustGet("dbtx").(*db.Queries)
+
+	fromYearStr := c.Param("fromYear")
+	toYearStr := c.Param("toYear")
+
+	// parse years to int
+	fromYear, err := strconv.Atoi(fromYearStr)
+	if err != nil {
+		log.Error("Cant convert fromYear to string")
+		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing fromYear")
+	}
+	toYear, err := strconv.Atoi(toYearStr)
+	if err != nil {
+		log.Error("Cant convert toYear to string")
+		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing toYear")
+	}
+
+	fromPlans, err := dbtx.GetPlansByYear(ctx, int32(fromYear))
+	if err != nil {
+		log.Error("Error fetching plans by fromYear: ", err)
+		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+	}
+
+	// Check that plans for toYear not already exists
+	_, err = dbtx.GetPlansByYear(ctx, int32(toYear))
+	if err != sql.ErrNoRows {
+		log.Error("toYear plans already exists: ", err)
+		ReturnResponseError(c, http.StatusBadRequest, "Error", "toYear plans already exists")
+	}
+
+	var newPlans []db.InsertCopiedPlansParams
+	// Map the from plans to newPlans struct
+	for _, p := range fromPlans {
+		newPlans = append(newPlans, db.InsertCopiedPlansParams{
+			Year:            int32(toYear),
+			CategoryID:      p.CategoryID,
+			JanuaryAmount:   p.JanuaryAmount,
+			FebruaryAmount:  p.FebruaryAmount,
+			MarchAmount:     p.MarchAmount,
+			AprilAmount:     p.AprilAmount,
+			MayAmount:       p.MayAmount,
+			JuneAmount:      p.JuneAmount,
+			JulyAmount:      p.JulyAmount,
+			AugustAmount:    p.AugustAmount,
+			SeptemberAmount: p.SeptemberAmount,
+			OctoberAmount:   p.OctoberAmount,
+			NovemberAmount:  p.NovemberAmount,
+			DecemberAmount:  p.DecemberAmount,
+			Type:            p.Type,
+		})
+	}
+
+	addedPlans, err := dbtx.InsertCopiedPlans(ctx, newPlans)
+
+	ReturnResponseData(c, http.StatusOK, "OK", addedPlans)
+}
+
+func (api *Api) getPlanYears(c *gin.Context) {
+	ctx := context.Background()
+	dbtx := c.MustGet("dbtx").(*db.Queries)
+
+	// Check that plans for toYear not already exists
+	planYears, err := dbtx.GetPlanYearsOrderedAsc(ctx)
+	if err != nil {
+		log.Error("Error perform GetPlanYearsOrderedAsc: ", err)
+		ReturnResponseError(c, http.StatusBadRequest, "Error", "Internal Server Error")
+	}
+
+	ReturnResponseData(c, http.StatusOK, "OK", planYears)
 }
