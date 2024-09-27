@@ -9,6 +9,52 @@ import (
 	"context"
 )
 
+// iteratorForInsertCopiedPlans implements pgx.CopyFromSource.
+type iteratorForInsertCopiedPlans struct {
+	rows                 []InsertCopiedPlansParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForInsertCopiedPlans) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForInsertCopiedPlans) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].Year,
+		r.rows[0].CategoryID,
+		r.rows[0].JanuaryAmount,
+		r.rows[0].FebruaryAmount,
+		r.rows[0].MarchAmount,
+		r.rows[0].AprilAmount,
+		r.rows[0].MayAmount,
+		r.rows[0].JuneAmount,
+		r.rows[0].JulyAmount,
+		r.rows[0].AugustAmount,
+		r.rows[0].SeptemberAmount,
+		r.rows[0].OctoberAmount,
+		r.rows[0].NovemberAmount,
+		r.rows[0].DecemberAmount,
+		r.rows[0].Type,
+	}, nil
+}
+
+func (r iteratorForInsertCopiedPlans) Err() error {
+	return nil
+}
+
+func (q *Queries) InsertCopiedPlans(ctx context.Context, arg []InsertCopiedPlansParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"public", "plans"}, []string{"year", "category_id", "january_amount", "february_amount", "march_amount", "april_amount", "may_amount", "june_amount", "july_amount", "august_amount", "september_amount", "october_amount", "november_amount", "december_amount", "type"}, &iteratorForInsertCopiedPlans{rows: arg})
+}
+
 // iteratorForInsertNewTransactions implements pgx.CopyFromSource.
 type iteratorForInsertNewTransactions struct {
 	rows                 []InsertNewTransactionsParams

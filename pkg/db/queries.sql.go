@@ -227,6 +227,32 @@ func (q *Queries) GetOverviewByYearNMonth(ctx context.Context, arg GetOverviewBy
 	return jsonb_agg, err
 }
 
+const getPlanYearsOrderedAsc = `-- name: GetPlanYearsOrderedAsc :many
+SELECT DISTINCT "year"
+FROM plans 
+ORDER BY "year"
+`
+
+func (q *Queries) GetPlanYearsOrderedAsc(ctx context.Context) ([]int32, error) {
+	rows, err := q.db.Query(ctx, getPlanYearsOrderedAsc)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var year int32
+		if err := rows.Scan(&year); err != nil {
+			return nil, err
+		}
+		items = append(items, year)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPlansByYear = `-- name: GetPlansByYear :many
 SELECT id, year, type, category_id, january_amount, february_amount, march_amount, april_amount, may_amount, june_amount, july_amount, august_amount, september_amount, october_amount, november_amount, december_amount
 FROM plans
@@ -334,6 +360,24 @@ func (q *Queries) InsertApiStatistic(ctx context.Context, arg InsertApiStatistic
 		arg.ElapsedTimeSeconds,
 	)
 	return err
+}
+
+type InsertCopiedPlansParams struct {
+	Year            int32         `json:"year"`
+	CategoryID      pgtype.Int4   `json:"categoryId"`
+	JanuaryAmount   pgtype.Float8 `json:"januaryAmount"`
+	FebruaryAmount  pgtype.Float8 `json:"februaryAmount"`
+	MarchAmount     pgtype.Float8 `json:"marchAmount"`
+	AprilAmount     pgtype.Float8 `json:"aprilAmount"`
+	MayAmount       pgtype.Float8 `json:"mayAmount"`
+	JuneAmount      pgtype.Float8 `json:"juneAmount"`
+	JulyAmount      pgtype.Float8 `json:"julyAmount"`
+	AugustAmount    pgtype.Float8 `json:"augustAmount"`
+	SeptemberAmount pgtype.Float8 `json:"septemberAmount"`
+	OctoberAmount   pgtype.Float8 `json:"octoberAmount"`
+	NovemberAmount  pgtype.Float8 `json:"novemberAmount"`
+	DecemberAmount  pgtype.Float8 `json:"decemberAmount"`
+	Type            TransType     `json:"type"`
 }
 
 type InsertNewTransactionsParams struct {
