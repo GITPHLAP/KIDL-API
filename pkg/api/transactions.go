@@ -178,12 +178,14 @@ func (api *Api) getTransactions(c *gin.Context) {
 	if err != nil {
 		log.Error("Cant convert year to string")
 		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing year")
+		return
 	}
 
 	transactions, err := dbtx.GetTransactionsFromViewByYear(ctx, int32(year))
 	if err != nil {
 		log.Error("Error fetching transactions by year: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
 	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", transactions)
