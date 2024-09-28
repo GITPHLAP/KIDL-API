@@ -200,6 +200,11 @@ func (api *Api) updateTransaction(c *gin.Context) {
 		return
 	}
 
+	// If categoryId is equal -1 its "no category"
+	if parameters.CategoryID.Int32 == -1 {
+		parameters.CategoryID.Valid = false
+	}
+
 	err := dbtx.UpdateTransactionCategoryAndAccounting(ctx, db.UpdateTransactionCategoryAndAccountingParams{
 		ID:             parameters.ID,
 		UserCategoryID: parameters.CategoryID,
@@ -208,6 +213,7 @@ func (api *Api) updateTransaction(c *gin.Context) {
 	if err != nil {
 		log.Error("Error update transaction: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
 	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", nil)
@@ -221,6 +227,7 @@ func (api *Api) IsBalanceCorrect(c *gin.Context) {
 	if err != nil {
 		log.Error("Error checking balance: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
 	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", match)
