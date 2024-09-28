@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"database/sql"
 	"kidl-api/pkg/db"
 	"net/http"
 	"strconv"
@@ -118,8 +117,13 @@ func (api *Api) copyPlan(c *gin.Context) {
 	}
 
 	// Check that plans for toYear not already exists
-	_, err = dbtx.GetPlansByYear(ctx, int32(toYear))
-	if err != sql.ErrNoRows {
+	existingToYearPlans, err := dbtx.GetPlansByYear(ctx, int32(toYear))
+	if err != nil {
+		log.Error("Error fetching plans by toYear: ", err)
+		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
+	}
+	if len(existingToYearPlans) != 0 {
 		log.Error("toYear plans already exists: ", err)
 		ReturnResponseError(c, http.StatusBadRequest, "Error", "toYear plans already exists")
 		return
@@ -148,6 +152,11 @@ func (api *Api) copyPlan(c *gin.Context) {
 	}
 
 	addedPlans, err := dbtx.InsertCopiedPlans(ctx, newPlans)
+	if err != nil {
+		log.Error("Error inserting copied plans: ", err)
+		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
+	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", addedPlans)
 }
