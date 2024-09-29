@@ -34,6 +34,7 @@ func (api *Api) getTransactionCategories(c *gin.Context) {
 	if err != nil {
 		log.Error("Error fetching categories: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
 	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", categories)
@@ -50,6 +51,7 @@ func (api *Api) createTransactionCategory(c *gin.Context) {
 	if err != nil {
 		log.Error("Error check if category exits: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
 	}
 	if exist {
 		log.Info("User try to create a category which already exists: ", err)
@@ -61,6 +63,7 @@ func (api *Api) createTransactionCategory(c *gin.Context) {
 	if err != nil {
 		log.Error("Error creating category: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
 	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", nil)
@@ -82,6 +85,7 @@ func (api *Api) updateTransactionCategory(c *gin.Context) {
 	if err != nil {
 		log.Error("Error check if category exits: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
 	}
 	if exist {
 		log.Info("User try to update a category which already exists: ", err)
@@ -93,6 +97,7 @@ func (api *Api) updateTransactionCategory(c *gin.Context) {
 	if err != nil {
 		log.Error("Error updating category: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
 	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", nil)
@@ -109,12 +114,14 @@ func (api *Api) deleteTransactionCategory(c *gin.Context) {
 	if err != nil {
 		log.Error("Cant convert id to string")
 		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing id")
+		return
 	}
 
 	err = dbtx.DeleteCategoryById(ctx, int32(id))
 	if err != nil {
 		log.Error("Error updating category: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
 	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", nil)
@@ -135,6 +142,7 @@ func (api *Api) createTransactionCategoryMapping(c *gin.Context) {
 	if err != nil {
 		log.Error("Error creating category mapping: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
 	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", nil)
@@ -155,6 +163,7 @@ func (api *Api) updateTransactionCategoryMapping(c *gin.Context) {
 	if err != nil {
 		log.Error("Error update category mapping: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
 	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", nil)
@@ -168,6 +177,7 @@ func (api *Api) getTransactionCategoryMappings(c *gin.Context) {
 	if err != nil {
 		log.Error("Error getting category mapping: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
 	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", mappings)
@@ -184,12 +194,14 @@ func (api *Api) deleteTransactionCategoryMapping(c *gin.Context) {
 	if err != nil {
 		log.Error("Cant convert id to string")
 		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing id")
+		return
 	}
 
 	err = dbtx.DeleteCategoryMapping(ctx, int32(id))
 	if err != nil {
 		log.Error("Error deleting category mapping: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
 	}
 
 	ReturnResponseData(c, http.StatusOK, "OK", nil)
