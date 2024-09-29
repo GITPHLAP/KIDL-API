@@ -447,14 +447,14 @@ WITH latest_balance AS (
     SELECT SUM(amount) total_balance
     FROM transactions
 )
-SELECT total_balance, latest_balance, total_balance = latest_balance AS is_equal
+SELECT total_balance::float8, latest_balance::float8, total_balance = latest_balance AS is_equal
 FROM latest_balance, total_balance
 `
 
 type IsBalanceMatchSumOfAmountRow struct {
-	TotalBalance  int64         `json:"totalBalance"`
-	LatestBalance pgtype.Float8 `json:"latestBalance"`
-	IsEqual       bool          `json:"isEqual"`
+	TotalBalance  float64 `json:"totalBalance"`
+	LatestBalance float64 `json:"latestBalance"`
+	IsEqual       bool    `json:"isEqual"`
 }
 
 func (q *Queries) IsBalanceMatchSumOfAmount(ctx context.Context) (IsBalanceMatchSumOfAmountRow, error) {
