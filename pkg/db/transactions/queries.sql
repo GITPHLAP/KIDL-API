@@ -14,6 +14,13 @@ SET user_category_id = $1, user_accounting=$2
 WHERE id = $3;
 
 -- name: IsBalanceMatchSumOfAmount :one
-SELECT SUM(amount) = (SELECT balance FROM transactions ORDER BY id DESC LIMIT 1) latest_balance
-FROM transactions;
+WITH latest_balance AS (
+    SELECT balance AS latest_balance
+    FROM transactions ORDER BY id DESC LIMIT 1
+), total_balance AS (
+    SELECT SUM(amount) total_balance
+    FROM transactions
+)
+SELECT total_balance::float8, latest_balance::float8, total_balance = latest_balance AS is_equal
+FROM latest_balance, total_balance;
 

@@ -440,15 +440,28 @@ func (q *Queries) InsertPlan(ctx context.Context, arg InsertPlanParams) error {
 }
 
 const isBalanceMatchSumOfAmount = `-- name: IsBalanceMatchSumOfAmount :one
-SELECT SUM(amount) = (SELECT balance FROM transactions ORDER BY id DESC LIMIT 1) latest_balance
-FROM transactions
+WITH latest_balance AS (
+    SELECT balance AS latest_balance
+    FROM transactions ORDER BY id DESC LIMIT 1
+), total_balance AS (
+    SELECT SUM(amount) total_balance
+    FROM transactions
+)
+SELECT total_balance::float8, latest_balance::float8, total_balance = latest_balance AS is_equal
+FROM latest_balance, total_balance
 `
 
-func (q *Queries) IsBalanceMatchSumOfAmount(ctx context.Context) (bool, error) {
+type IsBalanceMatchSumOfAmountRow struct {
+	TotalBalance  float64 `json:"totalBalance"`
+	LatestBalance float64 `json:"latestBalance"`
+	IsEqual       bool    `json:"isEqual"`
+}
+
+func (q *Queries) IsBalanceMatchSumOfAmount(ctx context.Context) (IsBalanceMatchSumOfAmountRow, error) {
 	row := q.db.QueryRow(ctx, isBalanceMatchSumOfAmount)
-	var latest_balance bool
-	err := row.Scan(&latest_balance)
-	return latest_balance, err
+	var i IsBalanceMatchSumOfAmountRow
+	err := row.Scan(&i.TotalBalance, &i.LatestBalance, &i.IsEqual)
+	return i, err
 }
 
 const updateCategory = `-- name: UpdateCategory :exec
