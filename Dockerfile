@@ -1,4 +1,4 @@
-FROM golang:1.22.5-alpine3.18 AS builder
+FROM golang:1.22.6-alpine3.19 AS builder
 
 RUN apk update 
 
@@ -9,7 +9,7 @@ COPY ./ /api
 RUN go env -w GO111MODULE=auto \
     && GOOS=linux GOARCH=amd64 go build -o kidl-api .
 
-FROM alpine:3.18
+FROM alpine:3.19
 ARG VERSION
 ENV VERSION=${VERSION:-develop}
 
