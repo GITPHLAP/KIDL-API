@@ -139,6 +139,11 @@ func (api *Api) uploadTransactions(c *gin.Context) {
 			goto InsertPart
 		}
 
+		// Prevent upload transactions in the future
+		if t.Accounting.Time.After(time.Now()) {
+			continue
+		}
+
 		// Add transaction to array of transactions to insert
 		transactionsToInsert = append(transactionsToInsert, db.InsertNewTransactionsParams{
 			Accounting:  t.Accounting,
