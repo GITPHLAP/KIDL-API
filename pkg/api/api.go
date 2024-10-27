@@ -1,7 +1,9 @@
 package api
 
 import (
+	"kidl-api/docs"
 	"kidl-api/pkg/db"
+	"kidl-api/pkg/models"
 	"net/http"
 	"os"
 	"reflect"
@@ -14,6 +16,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	log "github.com/sirupsen/logrus"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Api struct {
@@ -22,6 +26,7 @@ type Api struct {
 }
 
 func StartAPI() {
+	time.Sleep(4 * time.Second)
 	log.Info("Starting API")
 	// Setting up db connection
 	db, conn, err := db.InitConn()
@@ -63,18 +68,39 @@ func StartAPI() {
 	}
 
 	api.initializeRouters(r)
+
+	// region Initialize swagger
+	switch os.Getenv("ENVIRONMENT") {
+	case "develop":
+		// Swagger info
+		docs.SwaggerInfo.Title = "Swagger KIDL API"
+		docs.SwaggerInfo.Description = "This is a KIDL API server"
+		docs.SwaggerInfo.Version = "1.0"
+		// docs.SwaggerInfo.Host = "petstore.swagger.io"
+		docs.SwaggerInfo.BasePath = "/v1"
+		docs.SwaggerInfo.Schemes = []string{"http", "https"}
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
+		break
+	default:
+		break
+	}
+	// endregion
+
 	err = r.Run(":8080")
 	if err != nil {
 		log.Fatalf("Error starting API, err: %s", err.Error())
 	}
 }
 
+// healthCheckEndpoint godoc
+//
+//	@Summary		Endpoint to check if API is up and running
+//	@Description	return the API image version
+//	@Success		200	{object}	models.HealthCheckReturn
+//	@Router			/health_check [get]
 func (api *Api) healthCheckEndpoint(c *gin.Context) {
-	type HealthCheckReturn struct {
-		Version string `json:"version"`
-	}
 	version := os.Getenv("VERSION")
-	ReturnResponseData(c, http.StatusOK, "OK", HealthCheckReturn{
+	ReturnResponseData(c, http.StatusOK, "OK", models.HealthCheckReturn{
 		Version: version,
 	})
 }
