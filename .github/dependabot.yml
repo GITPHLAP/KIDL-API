@@ -19,7 +19,6 @@ updates:
     target-branch: "develop"
     allow:
       - dependency-type: "all"
-    open-pull-requests-limit: 12
     groups:
       gomod-dependencies:
         patterns: 
