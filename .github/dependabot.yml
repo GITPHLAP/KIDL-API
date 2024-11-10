@@ -19,3 +19,7 @@ updates:
     target-branch: "develop"
     allow:
       - dependency-type: "all"
+    groups:
+      gomod-dependencies:
+        patterns: 
+          - "*"
