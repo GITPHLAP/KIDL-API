@@ -17,6 +17,7 @@ sql:
   - "plans/schema.sql"
   - "monthly_overview_by_category/schema.sql"
   - "api_statistics/schema.sql"
+  - "yearly_overview_by_category/schema.sql"
   queries: 
   - "transactions/queries.sql"
   - "transactions_view/queries.sql"
@@ -25,4 +26,5 @@ sql:
   - "plans/queries.sql"
   - "monthly_overview_by_category/queries.sql"
   - "api_statistics/queries.sql"
+  - "yearly_overview_by_category/queries.sql"
   
