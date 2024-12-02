@@ -1,0 +1,19 @@
+definitions:
+  models.HealthCheckReturn:
+    properties:
+      version:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /health_check:
+    get:
+      description: return the API image version
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.HealthCheckReturn'
+      summary: Endpoint to check if API is up and running
+swagger: "2.0"
