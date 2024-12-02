@@ -1,4 +1,96 @@
 definitions:
+  api.MessageCodeData:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+  api.MessageCodeError:
+    properties:
+      code:
+        type: integer
+      description:
+        type: string
+      message:
+        type: string
+    type: object
+  api.ResponseData:
+    properties:
+      data: {}
+      meta:
+        $ref: '#/definitions/api.MessageCodeData'
+    type: object
+  api.ResponseError:
+    properties:
+      meta:
+        $ref: '#/definitions/api.MessageCodeError'
+    type: object
+  db.TransType:
+    enum:
+    - expenses
+    - income
+    type: string
+    x-enum-varnames:
+    - TransTypeExpenses
+    - TransTypeIncome
+  db.YearlyOverviewByCategory:
+    properties:
+      category:
+        type: string
+      month1ActualSum:
+        type: number
+      month1PlanSum:
+        type: number
+      month2ActualSum:
+        type: number
+      month2PlanSum:
+        type: number
+      month3ActualSum:
+        type: number
+      month3PlanSum:
+        type: number
+      month4ActualSum:
+        type: number
+      month4PlanSum:
+        type: number
+      month5ActualSum:
+        type: number
+      month5PlanSum:
+        type: number
+      month6ActualSum:
+        type: number
+      month6PlanSum:
+        type: number
+      month7ActualSum:
+        type: number
+      month7PlanSum:
+        type: number
+      month8ActualSum:
+        type: number
+      month8PlanSum:
+        type: number
+      month9ActualSum:
+        type: number
+      month9PlanSum:
+        type: number
+      month10ActualSum:
+        type: number
+      month10PlanSum:
+        type: number
+      month11ActualSum:
+        type: number
+      month11PlanSum:
+        type: number
+      month12ActualSum:
+        type: number
+      month12PlanSum:
+        type: number
+      type:
+        $ref: '#/definitions/db.TransType'
+      year:
+        type: integer
+    type: object
   models.HealthCheckReturn:
     properties:
       version:
@@ -16,4 +108,46 @@ paths:
           schema:
             $ref: '#/definitions/models.HealthCheckReturn'
       summary: Endpoint to check if API is up and running
+  /overview/template/{year}/{type}:
+    get:
+      consumes:
+      - application/json
+      description: get data by year and type
+      parameters:
+      - description: Year
+        in: path
+        name: year
+        required: true
+        type: integer
+      - description: Type
+        enum:
+        - expenses
+        - income
+        in: path
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.ResponseData'
+            - properties:
+                data:
+                  $ref: '#/definitions/db.YearlyOverviewByCategory'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Get data for the Nordea template
+      tags:
+      - accounts
 swagger: "2.0"

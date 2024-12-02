@@ -16,9 +16,11 @@ import (
 )
 
 func (api *Api) overviewSubrouter(r *gin.RouterGroup) {
-	planAPI := r.Group("/overview")
+	overviewAPI := r.Group("/overview")
 
-	planAPI.GET("/:year", api.getOverviews)
+	overviewAPI.GET("/:year", api.getOverviews)
+
+	overviewAPI.GET("/template/:year/:type", api.getTemplateData)
 
 }
 
@@ -154,4 +156,48 @@ func monthValidator(months []int32) error {
 		}
 	}
 	return nil
+}
+
+// getTemplateOverviews godoc
+//
+//	@Summary		Get data for the Nordea template
+//	@Description	get data by year and type
+//	@Tags			accounts
+//	@Accept			json
+//	@Produce		json
+//	@Param			year	path		int	true	"Year"
+//	@Param			type	path		db.TransType	true	"Type"
+//	@Success		200	{object}	api.ResponseData{data=db.YearlyOverviewByCategory}
+//	@Failure		400	{object}	api.ResponseError
+//	@Failure		500	{object}	api.ResponseError
+//	@Router			/overview/template/{year}/{type} [get]
+func (api *Api) getTemplateData(c *gin.Context) {
+	// var totalMonthData []MonthData
+
+	ctx := context.Background()
+	dbtx := c.MustGet("dbtx").(*db.Queries)
+
+	yearstr := c.Param("year")
+
+	// parse year to int
+	year, err := strconv.Atoi(yearstr)
+	if err != nil {
+		log.Error("Cant convert year to int: ", err)
+		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing year")
+		return
+	}
+
+	typeStr := c.Param("type")
+
+	overviewData, err := dbtx.GetYearOverviewByYearAndType(ctx, db.GetYearOverviewByYearAndTypeParams{
+		Year: int32(year),
+		Type: db.TransType(typeStr),
+	})
+	if err != nil {
+		log.Error("Cant get year-overview by year and type: ", err)
+		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
+		return
+	}
+
+	ReturnResponseData(c, http.StatusOK, "OK", overviewData)
 }

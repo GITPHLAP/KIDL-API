@@ -336,6 +336,103 @@ func (q *Queries) GetTransactionsFromViewByYear(ctx context.Context, year int32)
 	return items, nil
 }
 
+const getYearOverviewByYearAndType = `-- name: GetYearOverviewByYearAndType :many
+SELECT category
+	, month_1_plan_sum, month_1_actual_sum
+	, month_2_plan_sum, month_2_actual_sum
+	, month_3_plan_sum, month_3_actual_sum
+	, month_4_plan_sum, month_4_actual_sum
+	, month_5_plan_sum, month_5_actual_sum
+	, month_6_plan_sum, month_6_actual_sum
+	, month_7_plan_sum, month_7_actual_sum
+	, month_8_plan_sum, month_8_actual_sum
+	, month_9_plan_sum, month_9_actual_sum
+	, month_10_plan_sum, month_10_actual_sum
+	, month_11_plan_sum, month_11_actual_sum
+	, month_12_plan_sum, month_12_actual_sum
+FROM yearly_overview_by_category
+WHERE year = $1 AND type = $2
+`
+
+type GetYearOverviewByYearAndTypeParams struct {
+	Year int32     `json:"year"`
+	Type TransType `json:"type"`
+}
+
+type GetYearOverviewByYearAndTypeRow struct {
+	Category         pgtype.Text   `json:"category"`
+	Month1PlanSum    pgtype.Float8 `json:"month1PlanSum"`
+	Month1ActualSum  pgtype.Float8 `json:"month1ActualSum"`
+	Month2PlanSum    pgtype.Float8 `json:"month2PlanSum"`
+	Month2ActualSum  pgtype.Float8 `json:"month2ActualSum"`
+	Month3PlanSum    pgtype.Float8 `json:"month3PlanSum"`
+	Month3ActualSum  pgtype.Float8 `json:"month3ActualSum"`
+	Month4PlanSum    pgtype.Float8 `json:"month4PlanSum"`
+	Month4ActualSum  pgtype.Float8 `json:"month4ActualSum"`
+	Month5PlanSum    pgtype.Float8 `json:"month5PlanSum"`
+	Month5ActualSum  pgtype.Float8 `json:"month5ActualSum"`
+	Month6PlanSum    pgtype.Float8 `json:"month6PlanSum"`
+	Month6ActualSum  pgtype.Float8 `json:"month6ActualSum"`
+	Month7PlanSum    pgtype.Float8 `json:"month7PlanSum"`
+	Month7ActualSum  pgtype.Float8 `json:"month7ActualSum"`
+	Month8PlanSum    pgtype.Float8 `json:"month8PlanSum"`
+	Month8ActualSum  pgtype.Float8 `json:"month8ActualSum"`
+	Month9PlanSum    pgtype.Float8 `json:"month9PlanSum"`
+	Month9ActualSum  pgtype.Float8 `json:"month9ActualSum"`
+	Month10PlanSum   pgtype.Float8 `json:"month10PlanSum"`
+	Month10ActualSum pgtype.Float8 `json:"month10ActualSum"`
+	Month11PlanSum   pgtype.Float8 `json:"month11PlanSum"`
+	Month11ActualSum pgtype.Float8 `json:"month11ActualSum"`
+	Month12PlanSum   pgtype.Float8 `json:"month12PlanSum"`
+	Month12ActualSum pgtype.Float8 `json:"month12ActualSum"`
+}
+
+func (q *Queries) GetYearOverviewByYearAndType(ctx context.Context, arg GetYearOverviewByYearAndTypeParams) ([]GetYearOverviewByYearAndTypeRow, error) {
+	rows, err := q.db.Query(ctx, getYearOverviewByYearAndType, arg.Year, arg.Type)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetYearOverviewByYearAndTypeRow
+	for rows.Next() {
+		var i GetYearOverviewByYearAndTypeRow
+		if err := rows.Scan(
+			&i.Category,
+			&i.Month1PlanSum,
+			&i.Month1ActualSum,
+			&i.Month2PlanSum,
+			&i.Month2ActualSum,
+			&i.Month3PlanSum,
+			&i.Month3ActualSum,
+			&i.Month4PlanSum,
+			&i.Month4ActualSum,
+			&i.Month5PlanSum,
+			&i.Month5ActualSum,
+			&i.Month6PlanSum,
+			&i.Month6ActualSum,
+			&i.Month7PlanSum,
+			&i.Month7ActualSum,
+			&i.Month8PlanSum,
+			&i.Month8ActualSum,
+			&i.Month9PlanSum,
+			&i.Month9ActualSum,
+			&i.Month10PlanSum,
+			&i.Month10ActualSum,
+			&i.Month11PlanSum,
+			&i.Month11ActualSum,
+			&i.Month12PlanSum,
+			&i.Month12ActualSum,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertApiStatistic = `-- name: InsertApiStatistic :exec
 INSERT INTO public.api_statistics (url, status_code, http_method, size_bytes, client_ip, elapsed_time_seconds) 
 VALUES($1, $2, $3, $4, $5, $6)

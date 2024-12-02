@@ -1,0 +1,3 @@
+// Replace pgtypes
+replace pgtype.Text string
+replace pgtype.Float8 float64
