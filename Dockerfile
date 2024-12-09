@@ -9,7 +9,7 @@ COPY ./ /api
 RUN go env -w GO111MODULE=auto \
     && GOOS=linux GOARCH=amd64 go build -o kidl-api .
 
-FROM alpine:3.20
+FROM alpine:3.21
 ARG VERSION
 ENV VERSION=${VERSION:-develop}
 
