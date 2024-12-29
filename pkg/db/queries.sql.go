@@ -109,8 +109,9 @@ func (q *Queries) Get13thMonthByYear(ctx context.Context, year int32) (Get13thMo
 }
 
 const getAllCategories = `-- name: GetAllCategories :many
-SELECT id, description
+SELECT id, description, order_no
 FROM transaction_categories
+ORDER BY order_no
 `
 
 func (q *Queries) GetAllCategories(ctx context.Context) ([]TransactionCategory, error) {
@@ -122,7 +123,7 @@ func (q *Queries) GetAllCategories(ctx context.Context) ([]TransactionCategory, 
 	var items []TransactionCategory
 	for rows.Next() {
 		var i TransactionCategory
-		if err := rows.Scan(&i.ID, &i.Description); err != nil {
+		if err := rows.Scan(&i.ID, &i.Description, &i.OrderNo); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -254,9 +255,12 @@ func (q *Queries) GetPlanYearsOrderedAsc(ctx context.Context) ([]int32, error) {
 }
 
 const getPlansByYear = `-- name: GetPlansByYear :many
-SELECT id, year, type, category_id, january_amount, february_amount, march_amount, april_amount, may_amount, june_amount, july_amount, august_amount, september_amount, october_amount, november_amount, december_amount
-FROM plans
+SELECT p.id, p.year, p.type, p.category_id, p.january_amount, p.february_amount, p.march_amount, p.april_amount, p.may_amount, p.june_amount, p.july_amount, p.august_amount, p.september_amount, p.october_amount, p.november_amount, p.december_amount
+FROM plans p
+JOIN transaction_categories tc
+    ON p.category_id = tc.id
 WHERE year = $1
+ORDER BY tc.order_no
 `
 
 func (q *Queries) GetPlansByYear(ctx context.Context, year int32) ([]Plan, error) {

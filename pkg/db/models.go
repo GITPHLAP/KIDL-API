@@ -117,6 +117,7 @@ type TransactionCategoriesMapping struct {
 type TransactionCategory struct {
 	ID          int32  `json:"id"`
 	Description string `json:"description"`
+	OrderNo     int32  `json:"orderNo"`
 }
 
 type TransactionsView struct {

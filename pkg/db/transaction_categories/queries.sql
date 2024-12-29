@@ -1,6 +1,7 @@
 -- name: GetAllCategories :many
 SELECT *
-FROM transaction_categories;
+FROM transaction_categories
+ORDER BY order_no;
 
 
 -- name: CreateCategory :exec

@@ -5,9 +5,12 @@ INSERT INTO public.plans ("year", category_id, january_amount, february_amount
 VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15);
 
 -- name: GetPlansByYear :many
-SELECT *
-FROM plans
-WHERE year = $1;
+SELECT p.*
+FROM plans p
+JOIN transaction_categories tc
+    ON p.category_id = tc.id
+WHERE year = $1
+ORDER BY tc.order_no;
 
 -- name: UpdatePlanById :exec
 UPDATE plans
