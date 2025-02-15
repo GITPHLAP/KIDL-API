@@ -139,8 +139,9 @@ func (api *Api) uploadTransactions(c *gin.Context) {
 			goto InsertPart
 		}
 
-		// Prevent upload transactions in the future
-		if t.Accounting.Time.After(time.Now()) {
+		// Prevent upload transactions in the future and for the current date
+		// This is needed because Nordea sometimes edit dates, description and other parameters
+		if t.Accounting.Time.After(time.Now()) || t.Accounting.Time.Format("2006-01-02") == time.Now().Format("2006-01-02") {
 			continue
 		}
 
