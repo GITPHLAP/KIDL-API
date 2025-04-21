@@ -10,81 +10,38 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/juju/errors"
+
+	"github.com/loopfz/gadgeto/tonic"
 	log "github.com/sirupsen/logrus"
+	"github.com/wI2L/fizz"
 )
 
-func (api *Api) overviewSubrouter(r *gin.RouterGroup) {
-	overviewAPI := r.Group("/overview")
+func (api *Api) overviewSubrouter(f *fizz.RouterGroup) {
+	overviewAPI := f.Group("/overview", "Overview", "Group of all overview endpoints")
 
-	overviewAPI.GET("/:year", api.getOverviews)
+	overviewAPI.GET("/:year", nil, tonic.Handler(api.getOverviews, http.StatusOK))
 
-	overviewAPI.GET("/template/:year/:type", api.getTemplateData)
+	// overviewAPI.GET("/template/:year/:type", api.getTemplateData)
 
 }
 
-type OverviewReturn []struct {
-	Year   int            `json:"year"`
-	Months []MonthWrapper `json:"months"`
-}
-
-type MonthWrapper map[string][]MonthData
-
-type TypeData struct {
-	ActualSum pgtype.Float8 `json:"actual_sum"`
-	Category  pgtype.Text   `json:"category"`
-	PlanSum   pgtype.Float8 `json:"plan_sum"`
-}
-type TypeTotalData struct {
-	TotalActual pgtype.Float8 `json:"total_actual,omitempty"`
-	TotalPlan   pgtype.Float8 `json:"total_plan,omitempty"`
-}
-
-type MonthData struct {
-	Expenses      []TypeData     `json:"expenses,omitempty"`
-	ExpensesTotal *TypeTotalData `json:"expenses_total,omitempty"`
-	Income        []TypeData     `json:"income,omitempty"`
-	IncomeTotal   *TypeTotalData `json:"income_total,omitempty"`
-}
-
-func (api *Api) getOverviews(c *gin.Context) {
-	var result OverviewReturn
-	var totalMonthData []MonthData
+func (api *Api) getOverviews(c *gin.Context, params *models.GetOverviewsParams) (result models.OverviewReturn, err error) {
+	var totalMonthData []models.MonthData
 
 	ctx := context.Background()
 	dbtx := c.MustGet("dbtx").(*db.Queries)
 
-	yearstr := c.Param("year")
-
 	// parse year to int
-	year, err := strconv.Atoi(yearstr)
-	if err != nil {
-		log.Error("Cant convert year to int: ", err)
-		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing year")
-		return
-	}
-
-	monthsStr, ok := c.GetQueryArray("months")
-	if !ok {
-		log.Error("No months is entered: ", err)
-		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error finding months in query")
-		return
-	}
+	year := params.Year
 
 	// Converts the query string array to array of months in type int
-	months, err := convertStringArrayToIntArr(monthsStr)
-	if err != nil {
-		log.Error("Cant convert months to int: ", err)
-		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing months")
-		return
-	}
+	months := params.Months
 
 	// Validate the months
 	err = monthValidator(months)
 	if err != nil {
-		log.Error(err)
-		ReturnResponseError(c, http.StatusBadRequest, "Error", err.Error())
-		return
+		return nil, errors.NotValidf("Bindings %s", err)
 	}
 
 	overviewDataByte, err := dbtx.GetOverviewByYearNMonth(ctx, db.GetOverviewByYearNMonthParams{
@@ -92,41 +49,33 @@ func (api *Api) getOverviews(c *gin.Context) {
 		Months: months,
 	})
 	if err != nil {
-		log.Error("Cant get overview by year and month: ", err)
-		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
-		return
+		return nil, errors.Errorf("Cant get overview by year and month: %s", err)
 	}
 
 	err = json.Unmarshal(overviewDataByte, &result)
 	if err != nil {
-		log.Error("Cant unmarshal overview data: ", err)
-		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
-		return
+		return nil, errors.Errorf("Cant unmarshal overview data: %s", err)
 	}
 
 	// Fetch the "13th month" Total for the year
 	totalOverviewDataByte, err := dbtx.Get13thMonthByYear(ctx, int32(year))
 	if err != nil {
-		log.Error("Cant get total overview by year: ", err)
-		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
-		return
+		return nil, errors.Errorf("Cant get total overview by year: %s", err)
 	}
 
 	// Unmarshal the data to MonthData struct
 	err = json.Unmarshal(totalOverviewDataByte.Calculation, &totalMonthData)
 	if err != nil {
-		log.Error("Cant unmarshal overview data: ", err)
-		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
-		return
+		return nil, errors.Errorf("Cant unmarshal overview data: %s", err)
 	}
 	// Create a MonthWrapper to append to result slice of MonthWrapper
-	totalMonthWrapper := MonthWrapper{}
+	totalMonthWrapper := models.MonthWrapper{}
 	totalMonthWrapper["13"] = totalMonthData
 
 	// Append the "13" to rest of the overview
 	result[0].Months = append(result[0].Months, totalMonthWrapper)
 
-	ReturnResponseData(c, http.StatusOK, "OK", result)
+	return result, nil
 }
 
 func convertStringArrayToIntArr(input []string) ([]int32, error) {

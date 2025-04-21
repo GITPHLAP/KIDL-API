@@ -1,11 +1,10 @@
 package api
 
 import (
-	"kidl-api/docs"
 	"kidl-api/pkg/db"
 	"kidl-api/pkg/models"
+	"kidl-api/pkg/utils"
 	"net/http"
-	"os"
 	"reflect"
 	"time"
 
@@ -15,9 +14,11 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/loopfz/gadgeto/tonic"
+	swagger "github.com/num30/gin-swagger-ui"
 	log "github.com/sirupsen/logrus"
-	swaggerfiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/wI2L/fizz"
+	"github.com/wI2L/fizz/openapi"
 )
 
 type Api struct {
@@ -39,7 +40,9 @@ func StartAPI() {
 		conn: conn,
 	}
 
-	r := gin.Default()
+	// Tonic error hook
+	tonic.SetErrorHook(models.KIDLErrHook)
+	r := gin.New()
 
 	// Cors options
 	r.Use(cors.New(cors.Config{
@@ -53,6 +56,17 @@ func StartAPI() {
 	r.Use(TransactionHandler(&api))
 	r.Use(APIStatistics(&api))
 	r.Use(gin.Recovery())
+	r.Use(gin.Logger())
+
+	// Fizz initiate
+	f := fizz.NewFromEngine(r)
+
+	f.Generator().OverrideDataType(reflect.TypeOf(&pgtype.Text{}), "string", "string")
+	f.Generator().OverrideDataType(reflect.TypeOf(&pgtype.Int4{}), "int", "int32")
+	f.Generator().OverrideDataType(reflect.TypeOf(&pgtype.Int8{}), "int", "int64")
+	f.Generator().OverrideDataType(reflect.TypeOf(&pgtype.Bool{}), "bool", "true")
+	f.Generator().OverrideDataType(reflect.TypeOf(&pgtype.Float8{}), "number", "float64")
+	f.Generator().OverrideDataType(reflect.TypeOf(&pgtype.Float4{}), "number", "float32")
 
 	// Validations of pgtypes
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
@@ -67,51 +81,43 @@ func StartAPI() {
 		log.Println("This failed for some reason")
 	}
 
-	api.initializeRouters(r)
+	api.initializeRouters(f)
 
-	// region Initialize swagger
-	switch os.Getenv("ENVIRONMENT") {
-	case "develop":
-		// Swagger info
-		docs.SwaggerInfo.Title = "Swagger KIDL API"
-		docs.SwaggerInfo.Description = "This is a KIDL API server"
-		docs.SwaggerInfo.Version = "1.0"
-		// docs.SwaggerInfo.Host = "petstore.swagger.io"
-		docs.SwaggerInfo.BasePath = "/v1"
-		docs.SwaggerInfo.Schemes = []string{"http", "https"}
-		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-		break
-	default:
-		break
+	// Add Open API description
+	infos := &openapi.Info{
+		Title:       "KIDL API",
+		Description: "This is my KIDL API",
+		Version:     utils.GetEnvOrDefault("VERSION", "develop"),
 	}
-	// endregion
 
-	err = r.Run(":8080")
+	// Create an endpoint for openapi.json file
+	f.GET("/openapi.json", nil, f.OpenAPI(infos, "json"))
+
+	// Now add a UI handler
+	swagger.AddOpenApiUIHandler(r, "swagger", "/openapi.json")
+
+	err = f.Engine().Run(":8080")
 	if err != nil {
 		log.Fatalf("Error starting API, err: %s", err.Error())
 	}
 }
 
-// healthCheckEndpoint godoc
-//
-//	@Summary		Endpoint to check if API is up and running
-//	@Description	return the API image version
-//	@Success		200	{object}	models.HealthCheckReturn
-//	@Router			/health_check [get]
-func (api *Api) healthCheckEndpoint(c *gin.Context) {
-	version := os.Getenv("VERSION")
-	ReturnResponseData(c, http.StatusOK, "OK", models.HealthCheckReturn{
+func (api *Api) healthCheckEndpoint(c *gin.Context, req *models.HealthCheckParams) (models.HealthCheckReturn, error) {
+
+	version := utils.GetEnvOrDefault("VERSION", "develop")
+	return models.HealthCheckReturn{
 		Version: version,
-	})
+	}, nil
+	// ReturnResponseData(c, http.StatusOK, "OK", )
 }
 
-func (api *Api) initializeRouters(r *gin.Engine) {
-	v1 := r.Group("/v1")
+func (api *Api) initializeRouters(f *fizz.Fizz) {
+	v1 := f.Group("/v1", "V1", "Version group")
 
-	v1.GET("/health_check", api.healthCheckEndpoint)
-	api.transactionsSubrouter(v1)
-	api.transactionCategoriesSubrouter(v1)
-	api.plansSubrouter(v1)
+	v1.GET("/health_check", HealthCheckInfo, tonic.Handler(api.healthCheckEndpoint, http.StatusOK))
+	// api.transactionsSubrouter(v1)
+	// api.transactionCategoriesSubrouter(v1)
+	// api.plansSubrouter(v1)
 	api.overviewSubrouter(v1)
 
 }

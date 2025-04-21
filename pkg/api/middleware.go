@@ -1,14 +1,13 @@
 package api
 
 import (
-	"errors"
 	"kidl-api/pkg/db"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/juju/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -16,8 +15,8 @@ func TransactionHandler(api *Api) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tx, err := api.conn.Begin(c)
 		if err != nil {
-			log.Error("[TransactionHandler] Error creating transaction: ", err)
-			AbortWithError(c, http.StatusInternalServerError, "Internal Server Error", "Contact an Administrator")
+			log.Error()
+			c.AbortWithError(http.StatusInternalServerError, errors.Errorf("Error creating transaction: %s", err))
 			return
 		}
 
@@ -28,13 +27,14 @@ func TransactionHandler(api *Api) gin.HandlerFunc {
 
 		c.Next()
 
-		err = tx.Rollback(c)
-		if err != nil {
-			if !errors.Is(err, pgx.ErrTxClosed) {
-				log.Error(err)
+		if c.Writer.Status() == http.StatusOK {
+			log.Debug("Committing transaction")
+			if err := tx.Commit(c); err != nil {
+				log.Error("Error on committing transaction: ", err)
 			}
 		} else {
-			log.Warn("Rolled back transaction in middleware", c.Request.URL.String(), " ", c.Request.Method)
+			log.Debug("Rolling back transaction in middleware")
+			tx.Rollback(c)
 		}
 	}
 }
