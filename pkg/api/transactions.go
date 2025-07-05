@@ -53,6 +53,13 @@ func convertTransactionParameters(parameters []TransactionParamRaw) ([]Transacti
 	result := []TransactionParamConverted{}
 
 	for _, t := range parameters {
+		// Try parse accounting
+		accounting, err := time.Parse("2006/01/02", t.Accounting)
+		if err != nil {
+			log.Info(t.Accounting, " is not a valid date!")
+			continue
+		}
+
 		// replace , with . for numbers
 		dotAmount := strings.Replace(t.Amount, ",", ".", -1)
 
@@ -72,12 +79,6 @@ func convertTransactionParameters(parameters []TransactionParamRaw) ([]Transacti
 		sender, sendererr := strconv.ParseInt(t.Sender, 10, 64)
 		recipient, recipienterr := strconv.ParseInt(t.Recipient, 10, 64)
 
-		// Try parse accounting
-		accounting, err := time.Parse("2006/01/02", t.Accounting)
-		if err != nil {
-			log.Info(t.Accounting, " is not a valid date!")
-			continue
-		}
 		// Assign all the values to object and append to the result array
 		result = append(result, TransactionParamConverted{
 			Accounting:  pgtype.Date{Time: accounting, Valid: true},
