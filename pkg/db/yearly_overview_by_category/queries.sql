@@ -13,4 +13,5 @@ SELECT category
 	, month_11_plan_sum, month_11_actual_sum
 	, month_12_plan_sum, month_12_actual_sum
 FROM yearly_overview_by_category
-WHERE year = $1 AND type = $2;
+WHERE year = $1 AND type = $2
+ORDER BY category_order_no;

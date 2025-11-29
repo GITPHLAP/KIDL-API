@@ -25,5 +25,6 @@ CREATE TABLE yearly_overview_by_category (
 	month_11_plan_sum float8 NULL,
 	month_11_actual_sum float8 NULL,
 	month_12_plan_sum float8 NULL,
-	month_12_actual_sum float8 NULL
+	month_12_actual_sum float8 NULL,
+	category_order_no int NULL
 );
