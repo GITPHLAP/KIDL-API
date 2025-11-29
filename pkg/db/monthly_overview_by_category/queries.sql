@@ -7,8 +7,11 @@ FROM (
 			FROM (
 				SELECT mobc."year", mobc."month", json_build_object(mobc."type", json_agg(
 					json_build_object(
-						'category', category, 'actual_sum', actual_sum, 'plan_sum', plan_sum
+						'category', category, 
+						'actual_sum', actual_sum, 
+						'plan_sum', plan_sum
 					)
+					ORDER BY category_order_no
 				), mobc."type" || '_total', 					json_build_object(
 						'total_actual', SUM(actual_sum) , 'total_plan', SUM(plan_sum)
 					)
@@ -25,19 +28,23 @@ FROM (
 	GROUP BY YEAR
 ) y;
 
+
 -- name: Get13thMonthByYear :one 
 WITH year_overview AS (
-	SELECT YEAR, TYPE, category, SUM(actual_sum) AS actual_sum , sum(plan_sum) AS plan_sum 
+	SELECT YEAR, TYPE, category, category_order_no, SUM(actual_sum) AS actual_sum , sum(plan_sum) AS plan_sum
 	FROM monthly_overview_by_category mobc 
 	WHERE YEAR = $1
-	GROUP BY YEAR, TYPE, category
+	GROUP BY YEAR, TYPE, category, category_order_no
 )
 SELECT "year", json_agg(ym.caf) AS calculation
 FROM (
 	SELECT yo."year", json_build_object(yo."type", json_agg(
 		json_build_object(
-			'category', category, 'actual_sum', actual_sum, 'plan_sum', plan_sum
+			'category', category, 
+			'actual_sum', actual_sum, 
+			'plan_sum', plan_sum
 		)
+		ORDER BY category_order_no
 	), yo."type" || '_total', 					json_build_object(
 			'total_actual', SUM(actual_sum) , 'total_plan', SUM(plan_sum)
 		)
@@ -48,4 +55,3 @@ FROM (
 		, yo.TYPE
 ) ym
 GROUP BY YEAR;
-	
