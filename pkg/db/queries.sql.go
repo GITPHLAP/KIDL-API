@@ -26,13 +26,38 @@ func (q *Queries) AnyCategoryByName(ctx context.Context, description string) (bo
 	return exists, err
 }
 
-const createCategory = `-- name: CreateCategory :exec
-INSERT INTO transaction_categories(description)
-VALUES($1)
+const anyCategoryByNameAndId = `-- name: AnyCategoryByNameAndId :one
+SELECT EXISTS (
+    SELECT id
+    FROM transaction_categories
+    WHERE description = $1 AND id != $2
+)
 `
 
-func (q *Queries) CreateCategory(ctx context.Context, description string) error {
-	_, err := q.db.Exec(ctx, createCategory, description)
+type AnyCategoryByNameAndIdParams struct {
+	Description string `json:"description"`
+	ID          int32  `json:"id"`
+}
+
+func (q *Queries) AnyCategoryByNameAndId(ctx context.Context, arg AnyCategoryByNameAndIdParams) (bool, error) {
+	row := q.db.QueryRow(ctx, anyCategoryByNameAndId, arg.Description, arg.ID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const createCategory = `-- name: CreateCategory :exec
+INSERT INTO transaction_categories(description, comment)
+VALUES($1, $2)
+`
+
+type CreateCategoryParams struct {
+	Description string      `json:"description"`
+	Comment     pgtype.Text `json:"comment"`
+}
+
+func (q *Queries) CreateCategory(ctx context.Context, arg CreateCategoryParams) error {
+	_, err := q.db.Exec(ctx, createCategory, arg.Description, arg.Comment)
 	return err
 }
 
@@ -112,7 +137,7 @@ func (q *Queries) Get13thMonthByYear(ctx context.Context, year int32) (Get13thMo
 }
 
 const getAllCategories = `-- name: GetAllCategories :many
-SELECT id, description, order_no
+SELECT id, description, order_no, comment
 FROM transaction_categories
 ORDER BY order_no
 `
@@ -126,7 +151,12 @@ func (q *Queries) GetAllCategories(ctx context.Context) ([]TransactionCategory, 
 	var items []TransactionCategory
 	for rows.Next() {
 		var i TransactionCategory
-		if err := rows.Scan(&i.ID, &i.Description, &i.OrderNo); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Description,
+			&i.OrderNo,
+			&i.Comment,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -574,17 +604,18 @@ func (q *Queries) IsBalanceMatchSumOfAmount(ctx context.Context) (IsBalanceMatch
 
 const updateCategory = `-- name: UpdateCategory :exec
 UPDATE transaction_categories
-SET description = $1
+SET description = $1, comment = $3
 WHERE id =$2
 `
 
 type UpdateCategoryParams struct {
-	Description string `json:"description"`
-	ID          int32  `json:"id"`
+	Description string      `json:"description"`
+	ID          int32       `json:"id"`
+	Comment     pgtype.Text `json:"comment"`
 }
 
 func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) error {
-	_, err := q.db.Exec(ctx, updateCategory, arg.Description, arg.ID)
+	_, err := q.db.Exec(ctx, updateCategory, arg.Description, arg.ID, arg.Comment)
 	return err
 }
 

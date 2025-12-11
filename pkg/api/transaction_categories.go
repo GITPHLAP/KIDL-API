@@ -14,7 +14,7 @@ func (api *Api) transactionCategoriesSubrouter(r *gin.RouterGroup) {
 	transactionCategoriesAPI := r.Group("/transaction_categories")
 
 	transactionCategoriesAPI.GET("", api.getTransactionCategories)
-	transactionCategoriesAPI.POST("/:category", api.createTransactionCategory)
+	transactionCategoriesAPI.POST("", api.createTransactionCategory)
 	transactionCategoriesAPI.PATCH("", api.updateTransactionCategory)
 	transactionCategoriesAPI.DELETE("/:id", api.deleteTransactionCategory)
 
@@ -41,13 +41,18 @@ func (api *Api) getTransactionCategories(c *gin.Context) {
 }
 
 func (api *Api) createTransactionCategory(c *gin.Context) {
+	var parameters db.CreateCategoryParams
 	ctx := context.Background()
 	dbtx := c.MustGet("dbtx").(*db.Queries)
 
-	category := c.Param("category")
+	if err := c.BindJSON(&parameters); err != nil {
+		log.Error("Error parsing request data: ", err)
+		ReturnResponseError(c, http.StatusBadRequest, "Error", "Error parsing request")
+		return
+	}
 
 	// Check if category allready exist
-	exist, err := dbtx.AnyCategoryByName(ctx, category)
+	exist, err := dbtx.AnyCategoryByName(ctx, parameters.Description)
 	if err != nil {
 		log.Error("Error check if category exits: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
@@ -59,7 +64,7 @@ func (api *Api) createTransactionCategory(c *gin.Context) {
 		return
 	}
 
-	err = dbtx.CreateCategory(ctx, category)
+	err = dbtx.CreateCategory(ctx, parameters)
 	if err != nil {
 		log.Error("Error creating category: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
@@ -80,8 +85,11 @@ func (api *Api) updateTransactionCategory(c *gin.Context) {
 		return
 	}
 
-	// Check if category allready exist
-	exist, err := dbtx.AnyCategoryByName(ctx, parameters.Description)
+	// Check if category allready exist for another id
+	exist, err := dbtx.AnyCategoryByNameAndId(ctx, db.AnyCategoryByNameAndIdParams{
+		Description: parameters.Description,
+		ID:          parameters.ID,
+	})
 	if err != nil {
 		log.Error("Error check if category exits: ", err)
 		ReturnResponseError(c, http.StatusInternalServerError, "Error", "Internal server error")
