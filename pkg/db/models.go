@@ -116,9 +116,10 @@ type TransactionCategoriesMapping struct {
 }
 
 type TransactionCategory struct {
-	ID          int32  `json:"id"`
-	Description string `json:"description"`
-	OrderNo     int32  `json:"orderNo"`
+	ID          int32       `json:"id"`
+	Description string      `json:"description"`
+	OrderNo     int32       `json:"orderNo"`
+	Comment     pgtype.Text `json:"comment"`
 }
 
 type TransactionsView struct {
