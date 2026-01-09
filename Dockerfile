@@ -10,6 +10,8 @@ RUN go env -w GO111MODULE=auto \
     && GOOS=linux GOARCH=amd64 go build -o kidl-api .
 
 FROM alpine:3.23
+# Needed for healthcheck
+RUN apk add curl 
 ARG VERSION
 ENV VERSION=${VERSION:-develop}
 
