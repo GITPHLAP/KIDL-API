@@ -1,8 +1,8 @@
-FROM golang:1.24.3-alpine3.20 AS builder
+FROM golang:1.27.1-alpine3.24 AS builder
 
 RUN apk update 
 
-RUN apk add build-base=0.5-r3 gnutls-dev=3.8.5-r0
+RUN apk add build-base=0.5-r4 gnutls-dev=3.8.13-r0
 
 WORKDIR /app
 
